@@ -23,12 +23,16 @@ To easily execute the same command *x* number of times, a multiplier may be spec
 x * (cmd)
 </pre>
 
+> *Kumseok:* If we plan to support arithmetic operations in our DSL, we may have to revise this syntax to disambiguate arithmetic ops. For now, I don't see much use for arithmetic ops in our DSL so I think this syntax is good.
+
+
 ## Spawn
 The *spawn* command will be used to start processes
 
 <pre>
 spawn [options] <i>script(s)</i> [args]
 </pre>
+
 
 ### Options
 --attr <i>name(s)</i> 
@@ -38,6 +42,15 @@ spawn [options] <i>script(s)</i> [args]
 spawn --attr "Camera" logger.js gpio1.log
 spawn --attr ["Camera", "Temperature"] logger.js gpio1.log
 ```
+
+> *Kumseok:* I like this idea, though I also think the `--attr` token may be redundant. Perhaps we can support something like *hashtags* or named attributes. We are essentially using this syntax to "select" nodes, similar to how we use CSS query selectors. For example:
+
+```
+spawn logger.js gpio1.log #webcam
+spawn logger.js gpio1.log #webcam #temperature-sensor
+spawn logger.js gpio1.log #webcam --region=vancouver
+```
+
 
 ### Process Naming
 Attaching names to a processes makes creating a graph with the *connect* command easy. More than one process can fall under the same name and references to such name will refer to the list of processes with that name.
@@ -51,6 +64,7 @@ Example:
 ```
 spawn VideoRecorder.js as recorder
 ```
+
 
 ### Spawning multiple processes of the same type
 <pre>
@@ -161,8 +175,22 @@ Example:
 spawn gpio-reader.js /dev/gpio1 ~>{10} spawn logger.js gpio1.log
 ```
 
+*Kumseok:* What do you think about supporting constraints in a generic way? For example, it would be something like binding a boolean function to a stream, essentially telling the system to ensure that the function always returns true.
+
+Example: 
+```
+function qos5mbs () {
+	return bytes/second >= 5
+}
+
+A ~>{qos5mbs} B
+```
+
+
 ## Connect
 **Question**: Is there any benefit to having the graph specified before any processes are spawned (e.g. to better distribute the graph across devices once the structure is known)? Supporting this would require more complex syntax and semantics.
+
+> *Kumseok:* I think there would be certain benefits, a major one being able to decouple the graph topology/structure from the exact processes. For example, if we can support defining a dataflow structure with variable names whose values can be assigned later, then we would be able to "plug in" actual programs into a graph at a later time.
 
 The *connect* command provides a straightforward way to create graphs. Any type of piping listed under [Piping](#Piping) is supported.
 
@@ -174,13 +202,16 @@ For example, the following simple graph cannot be specified by strictly using sp
 
 ![diagram](./images/some-to-some.png)
 
-Soultion:
+Solution:
 ```
 spawn program_A.js as "A"
 spawn program_C.js as "C"
 
 connect [A ~> C, A ~> spawn program_D.js, spawn program_B.js ~> C]
 ```
+
+*Kumseok:* Instead of using the `spawn` expression here, what about a new keyword (e.g., `vertex`, `agent`)? The reason I suggest this is because the `spawn` expression would immediately start a process, while we may want to simply define an abstract "placeholder" process without immediately starting it until the graph is fully defined.
+
 
 ## Other Language Elements
 These other elements have been briefly brought during discussions:
