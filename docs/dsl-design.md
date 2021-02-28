@@ -210,6 +210,53 @@ spawn program_C.js as "C"
 connect [A ~> C, A ~> spawn program_D.js, spawn program_B.js ~> C]
 ```
 
+**Initial ideas for more flexible graph syntax/semantics:**
+
+The *node* keyword assigns the ingrediants for starting a process (script and args) to a name. I'll call these "staged processes" for now and running processes will be "spawned processes". The *spawn_connect* keyword is used to connect together any number of staged or spawned processes, and immediately spawn any staged processes. The *connect* keyword creates a graph consisting of processes and assigns it a name. One could then use *spawn* \<graph_name\> to spawn any staged processes in the graph. This would be the same as using the connect command to connect a bunch of processes, and then spawn any staged processes one-by-one.
+
+We would need to keep a map of names and the corresponding processes or the graph that fall(s) under them. A name can map to any number of staged and spawned processes. A name that maps to a graph can only map to that graph and nothing else. We could use the terminology "graphs" and "node groups".
+
+To later add more processes to the graph, spawn more processes under one of the node groups involved in the graph (e.g. "A" or "C").
+
+
+```
+spawn program_A.js as "A"
+node program_A2.js log.txt as "A"
+node program_C.js as "C"
+
+spawn_connect [A ~> C, A ~> node program_D.js, node program_B.js ~> C]
+
+or
+
+spawn program_A.js as "A"
+node program_A2.js log.txt as "A"
+node program_C.js as "C"
+
+connect [A ~> C, A ~> node program_D.js, node program_B.js ~> C] as "graph_A"
+spawn "graphA"
+
+or
+
+spawn program_A.js as "A"
+node program_A2.js log.txt as "A"
+node program_C.js as "C"
+node program_D.js as "D"
+node program_B as "B"
+
+connect [A ~> C, A ~> D, B ~> C] as "graph_A"
+
+spawn "A" // will spawn the staged process and do nothing to the already running process in the "A" node group
+spawn "B"
+spawn "C"
+spawn "D"
+```
+
+```
+// To add a few more processes to the graph sending to C and D, we can just
+// spawn more processes under the node group "A"
+3 * (spawn program_A.js as "A")
+```
+
 *Kumseok:* Instead of using the `spawn` expression here, what about a new keyword (e.g., `vertex`, `agent`)? The reason I suggest this is because the `spawn` expression would immediately start a process, while we may want to simply define an abstract "placeholder" process without immediately starting it until the graph is fully defined.
 
 
