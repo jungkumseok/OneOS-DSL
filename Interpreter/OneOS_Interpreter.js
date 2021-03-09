@@ -316,7 +316,7 @@ function parse(input) {
                 input.next();
                 return maybe_op(
                     {
-                        type: tok.value == "=" ? "assign" : "binary",
+                        type: "op",
                         operator: tok.value,
                         left: left,
                         right: maybe_op(parse_atom(expectIdentifier), his_prec),

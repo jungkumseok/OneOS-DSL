@@ -52,7 +52,7 @@
 #### Operators (~>, ->, -*>, ~*>, ~/>, *)
 ```
 {
-    type: "operator",
+    type: "op",
     operator: OPERATOR
     left: AST,
     right: AST
@@ -66,10 +66,10 @@ Example: spawn map.js -> spawn reduce.js ~> spawn reduce.js log.txt
 ```
 
 {
-    type: 'binary',
+    type: 'op',
     operator: '~>',
     left: {
-        type: 'binary',
+        type: 'op',
         operator: '->',
         left: {
             type: 'cmd',
