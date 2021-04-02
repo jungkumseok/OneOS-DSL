@@ -60,11 +60,19 @@ function generate_node_name(file_name) {
     return file_name + Math.floor(Math.random() * 100);
 }
 
-function push_node_group(group, nd) {
-    if (NodeGroups[group] == undefined) {
-        NodeGroups[group] = [];
+function push_node_group(name, nd) {
+    if (NodeGroups[name] == undefined) {
+        NodeGroups[name] = [];
     }
-    NodeGroups[group].push(nd);
+    NodeGroups[name].push(nd);
+}
+
+function get_node_group(name) {
+    var group = NodeGroups[name];
+    if (group == undefined) {
+        throw new Error(`No node group named \"${name}\"`);
+    }
+    return group;
 }
 
 function verify_node_arg(cmd, first_arg) {
@@ -115,6 +123,22 @@ function create_node(exp, spawn) {
     }
 
     return nd;
+}
+
+function create_edge(sender, receivers) {
+    if (typeof senders == "string") {
+        // Get the corresponding node group
+        senders = get_node_group(senders);
+    }
+
+    if (typeof receiver == "string") {
+        // Get the corresponding node group
+        receivers = get_node_group(receivers);
+    }
+
+    // TODO: Need more complex logic here for how we create edges?
+
+    return new Edge(senders, receiver, op);
 }
 
 function create_implicit_graph(op_exp) {
@@ -246,7 +270,7 @@ function apply_op(op, left_exp, right_exp) {
     switch (op) {
         case "*":
             var x = evaluate(left_exp);
-            var vals = []
+            var vals = [];
             for (var i = 0; i < num(x); i++) {
                 vals.push(evaluate(right_exp));
             }
@@ -256,12 +280,17 @@ function apply_op(op, left_exp, right_exp) {
         case "-*>":
         case "~*>":
         case "~/>":
-            return new Edge(evaluate(left_exp), evaluate(right_exp), op);
+            var senders = evaluate(left_exp);
+            var receivers = evaluate(right_exp);
+            console.log(senders);
+            console.log(receivers);
+            var edges = create_edge(senders, receivers);
     }
     throw new Error("Can't apply operator " + op);
 }
 
 var fs = require("fs");
+const { send } = require("node:process");
 var input = fs.readFileSync("./input-test.txt").toString("utf-8");
 
 var inputStream = InputStream(input);
@@ -291,7 +320,7 @@ var AST = parse(tokenStream);
 evaluate(AST);
 
 console.log("Graphs:");
-console.log(Graphs);
+console.log(Graphs["graph_A"].edges);
 
 console.log("Node Groups:");
 console.log(NodeGroups);
