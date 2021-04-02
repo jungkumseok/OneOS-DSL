@@ -1,502 +1,13 @@
-function InputStream(input) {
-    var pos = 0,
-        line = 1,
-        col = 0;
-    return {
-        next: next,
-        peek: peek,
-        peek2: peek2,
-        eof: eof,
-        croak: croak,
-    };
-    function next() {
-        var ch = input.charAt(pos++);
-        if (ch == "\n") line++, (col = 0);
-        else col++;
-        return ch;
-    }
-    function peek() {
-        return input.charAt(pos);
-    }
-    function peek2() {
-        return input.charAt(pos + 1);
-    }
-    function eof() {
-        return peek() == "";
-    }
-    function croak(msg) {
-        throw new Error(msg + " (" + line + ":" + col + ")");
-    }
-}
-
-function TokenStream(input) {
-    var current = null;
-
-    var cmds = " ls ps cd pwd cat spawn connect node ";
-    var keywords = " as ";
-
-    return {
-        next: next,
-        peek: peek,
-        eof: eof,
-        croak: input.croak,
-    };
-
-    function is_cmd(x) {
-        return cmds.indexOf(" " + x + " ") >= 0;
-    }
-
-    function is_keyword(x) {
-        return keywords.indexOf(" " + x + " ") >= 0;
-    }
-
-    function is_digit(ch) {
-        return /[0-9]/i.test(ch);
-    }
-
-    function is_op_char(ch) {
-        // Operators: *, ->, -*>, ~>, ~/>, ~*>
-
-        // Check if "-" is part of an operator
-        if (ch == "-" && input.peek2() != "*" && input.peek2() != ">") {
-            return false;
-        }
-
-        // Check if "/" is part of an operator
-        if (ch == "/" && input.peek2() != ">") {
-            return false;
-        }
-
-        return "*-/~>".indexOf(ch) >= 0;
-    }
-
-    function is_punc(ch) {
-        return "()[],".indexOf(ch) >= 0;
-    }
-
-    function is_new_line(ch) {
-        return "\n\r".indexOf(ch) >= 0;
-    }
-
-    function is_whitespace(ch) {
-        return " \t".indexOf(ch) >= 0;
-    }
-
-    function is_word(ch) {
-        return ch != " " && !is_punc(ch) && !is_op_char(ch) && !is_new_line(ch);
-    }
-
-    function read_while(predicate) {
-        var str = "";
-        while (!input.eof() && predicate(input.peek())) str += input.next();
-        return str;
-    }
-
-    function read_number() {
-        // Note: can add support for hexadecimal numbers here too if we want
-
-        var has_dot = false;
-        var number = read_while(function (ch) {
-            if (ch == ".") {
-                if (has_dot) return false;
-                has_dot = true;
-                return true;
-            }
-            return is_digit(ch);
-        });
-        return { type: "num", value: parseFloat(number) };
-    }
-
-    function read_word() {
-        // We put as few restrictions as possible on what constitutes a word, so
-        // that arguments to a command are not restricted.
-
-        /* Types of words: command, keyword, word (i.e. any other word) */
-
-        // Stop reading when reach a space, punctuation, or an operator
-        var id = read_while(is_word);
-        return {
-            type: is_cmd(id) ? "cmd" : is_keyword(id) ? "kw" : "w",
-            value: id,
-        };
-    }
-
-    // Note: We're not currently interpreting escape characters (\n, \t, etc.)
-    function read_escaped(end) {
-        var escaped = false;
-        var str = "";
-        input.next();
-        while (!input.eof()) {
-            var ch = input.next();
-            if (escaped) {
-                str += ch;
-                escaped = false;
-            } else if (ch == "\\") {
-                escaped = true;
-            } else if (ch == end) {
-                break;
-            } else {
-                str += ch;
-            }
-        }
-        return str;
-    }
-
-    function read_string() {
-        return { type: "str", value: read_escaped('"') };
-    }
-
-    function read_attr() {
-        input.next();
-        var str = read_while(is_word);
-        if (str == "") {
-            input.croak("# must be followed by attribute name");
-        }
-
-        return {
-            type: "attr",
-            value: str,
-        };
-    }
-
-    // Fetches the next token
-    function read_next() {
-        read_while(is_whitespace);
-        if (input.eof()) return null;
-        var ch = input.peek();
-
-        // TODO: also suport single quotes?
-        if (ch == '"') {
-            return read_string();
-        }
-
-        if (is_digit(ch)) {
-            return read_number();
-        }
-
-        if (is_punc(ch)) {
-            return {
-                type: "punc",
-                value: input.next(),
-            };
-        }
-
-        if (is_new_line(ch)) {
-            read_while(is_new_line);
-            return {
-                type: "new_line",
-            };
-        }
-
-        if (is_op_char(ch)) {
-            return {
-                type: "op",
-                value: read_while(is_op_char),
-            };
-        }
-
-        if (ch == "#") {
-            return read_attr();
-        }
-
-        // Otherwise assume it's a word that has some meaning
-        return read_word();
-
-        // input.croak("Can't handle character: " + ch);
-    }
-
-    function peek() {
-        return current || (current = read_next());
-    }
-
-    function next() {
-        var tok = current;
-        current = null;
-        return tok || read_next();
-    }
-
-    function eof() {
-        return peek() == null;
-    }
-}
-
-function parse(input) {
-    var PRECEDENCE = {
-        "~>": 1,
-        "->": 1,
-        "~*>": 1,
-        "~/>": 1,
-        "*": 2,
-    };
-
-    return parse_toplevel();
-
-    function is_punc(ch) {
-        var tok = input.peek();
-        return tok && tok.type == "punc" && (!ch || tok.value == ch) && tok;
-    }
-
-    function is_kw(kw) {
-        var tok = input.peek();
-        return tok && tok.type == "kw" && (!kw || tok.value == kw) && tok;
-    }
-
-    function is_op(op) {
-        var tok = input.peek();
-        return tok && tok.type == "op" && (!op || tok.value == op) && tok;
-    }
-
-    function is_new_line() {
-        var tok = input.peek();
-        return tok && tok.type == "new_line" && tok;
-    }
-
-    function is_word() {
-        var tok = input.peek();
-        return tok && tok.type == "w" && tok;
-    }
-
-    function is_str() {
-        var tok = input.peek();
-        return tok && tok.type == "str" && tok;
-    }
-
-    function is_num() {
-        var tok = input.peek();
-        return tok && tok.type == "num" && tok;
-    }
-
-    function is_valid_arg() {
-        return is_word() || is_str() || is_num();
-    }
-
-    function is_cmd(cmd) {
-        var tok = input.peek();
-        return tok && tok.type == "cmd" && (!cmd || cmd == tok.value) && tok;
-    }
-
-    function is_attr() {
-        var tok = input.peek();
-        return tok && tok.type == "attr" && tok;
-    }
-
-    function is_list() {
-        return is_punc("[");
-    }
-
-    function skip_punc(ch) {
-        if (is_punc(ch)) input.next();
-        else input.croak('Expecting punctuation: "' + ch + '"');
-    }
-
-    function skip_kw(kw) {
-        if (is_kw(kw)) input.next();
-        else input.croak('Expecting keyword: "' + kw + '"');
-    }
-
-    function skip_op(op) {
-        if (is_op(op)) input.next();
-        else input.croak('Expecting operator: "' + op + '"');
-    }
-
-    function skip_cmd(op) {
-        if (is_cmd(op)) input.next();
-        else input.croak('Expecting command: "' + op + '"');
-    }
-
-    function unexpected() {
-        input.croak("Unexpected token: " + JSON.stringify(input.peek()));
-    }
-
-    function maybe_op(left, my_prec, expectIdentifier) {
-        var tok = is_op();
-        if (tok) {
-            var his_prec = PRECEDENCE[tok.value];
-            if (his_prec > my_prec) {
-                input.next();
-                return maybe_op(
-                    {
-                        type: "op",
-                        operator: tok.value,
-                        left: left,
-                        right: maybe_op(parse_atom(expectIdentifier), his_prec),
-                    },
-                    my_prec
-                );
-            }
-        }
-        return left;
-    }
-
-    function delimited(start, stop, separator, parser) {
-        var a = [];
-        var first = true;
-        skip_punc(start);
-        while (!input.eof()) {
-            if (is_punc(stop)) break;
-            if (first) first = false;
-            else skip_punc(separator);
-            if (is_punc(stop)) break;
-            a.push(parser());
-        }
-        skip_punc(stop);
-        return a;
-    }
-
-    function parse_connect_cmd() {
-        skip_cmd("connect");
-
-        // Connect expects a single list as the argument
-        if (is_list()) {
-            // Words in the list that are not cmds are considered to be
-            // identifiers (i.e. the names) of node groups
-            parsedList = parse_list(true);
-        } else {
-            input.croak("Expecting list as argument to connect command.");
-        }
-
-        // Parse "as" <name>
-        var name = parse_name();
-
-        return {
-            type: "cmd",
-            cmd: "connect",
-            args: [parsedList],
-            graph: name,
-        };
-    }
-
-    function parse_spawn_or_node_cmd() {
-        cmd = input.next().value;
-
-        var args = parse_args();
-        if (args.length == 0) {
-            input.croak(
-                `\"${cmd}\" command expects a *.js or *.py file as an argument`
-            );
-        }
-
-        // Parse attributes
-        var attrs = [];
-        while (is_attr()) {
-            var attr = input.next();
-            attrs.push(attr.value);
-        }
-
-        // Parse "as" <name>
-        var name = parse_name();
-
-        return {
-            type: "cmd",
-            cmd: cmd,
-            args: args,
-            group: name,
-            attrs: attrs,
-        };
-    }
-
-    function parse_cmd() {
-        cmd = input.next().value;
-
-        // TODO: suport unix style options?
-        var args = parse_args();
-
-        return {
-            type: "cmd",
-            cmd: cmd,
-            args: args,
-        };
-    }
-
-    function parse_args() {
-        var args = [];
-        while (is_valid_arg()) {
-            args.push(input.next());
-        }
-        return args;
-    }
-
-    function parse_name() {
-        var name = null;
-        if (is_kw("as")) {
-            input.next();
-            if (is_str()) {
-                name = input.next().value;
-            } else {
-                input.croak('Expecting string after "as" keyword.');
-            }
-        }
-        return name;
-    }
-
-    function parse_list(expectIdentifier) {
-        var parsed_elems = delimited("[", "]", ",", () =>
-            parse_expression(expectIdentifier)
-        );
-        return {
-            type: "list",
-            elems: parsed_elems,
-        };
-    }
-
-    function parse_atom(expectIdentifier) {
-        // console.log(input.peek());
-        if (is_punc("(")) {
-            input.next();
-            var exp = parse_expression();
-            skip_punc(")");
-            return exp;
-        }
-
-        if (is_list()) {
-            return parse_list(expectIdentifier);
-        }
-
-        if (is_cmd("connect")) {
-            return parse_connect_cmd();
-        }
-
-        if (is_cmd("spawn") || is_cmd("node")) {
-            return parse_spawn_or_node_cmd();
-        }
-
-        if (is_cmd()) {
-            return parse_cmd();
-        }
-
-        var tok = input.peek();
-
-        if (expectIdentifier && tok.type == "w") {
-            tok = input.next();
-            return {
-                type: "id",
-                value: tok.value,
-            };
-        }
-
-        if (tok.type == "num" || tok.type == "str") {
-            tok = input.next();
-            return tok;
-        }
-
-        unexpected();
-    }
-
-    function parse_toplevel() {
-        var prog = [];
-        while (!input.eof()) {
-            if (is_new_line()) {
-                input.next();
-                continue;
-            }
-            prog.push(parse_expression());
-        }
-        return { type: "prog", prog: prog };
-    }
-
-    function parse_expression(expectIdentifier) {
-        return maybe_op(parse_atom(expectIdentifier), 0, expectIdentifier);
-    }
+var InputStream = require("./input-stream.js");
+var TokenStream = require("./token-stream.js");
+var parse = require("./parser.js");
+
+function Node(name, spawned, script, args, attrs) {
+    this.name = name;
+    this.spawned = spawned;
+    this.script = script;
+    this.args = args;
+    this.attrs = attrs;
 }
 
 function Edge(sender, receiver, pipe) {
@@ -510,24 +21,18 @@ function Graph(name, edges) {
     this.edges = edges;
 }
 
-function Node(name, spawned, script, args, attrs) {
-    this.name = name;
-    this.spawned = spawned;
-    this.script = script;
-    this.args = args;
-    this.attrs = attrs;
-}
-
 // Maps name to a graph
 var Graphs = {};
 
 // Maps name to a list of one or more nodes (staged or spawned)
 var NodeGroups = {};
 
+// Queue of nodes, groups, and graphs needing to be spawned
 var spawnQueue = [];
 
-// Can have unamed processes
-// - keep a list of all processes?
+var within_graph = false;
+var within_implicit_graph = false; // TODO: this is temporary hacky way to add a graph rather than individual nodes to the spawnQueue
+var num_implicit_graphs = 0;
 
 function is_node_group(name) {
     return NodeGroups[name] != undefined;
@@ -543,19 +48,15 @@ function is_piping_op(exp) {
 }
 
 function spawn_node_group(name) {
-    // TODO: Likely call something instead
-    // var node_group = NodeGroups[name];
-    // groups_to_spawn.push(node_group);
+    spawnQueue.push(NodeGroups[name]);
 }
 
 function spawn_graph(name) {
-    // TODO: Likely call something instead
-    // var graph = Graphs[name];
-    // graphs_to_spawn.push(graph);
+    spawnQueue.push(Graphs[name]);
 }
 
 function generate_node_name(file_name) {
-    // TODO: ask Kumseok how to identify files
+    // TODO: properly implement node naming
     return file_name + Math.floor(Math.random() * 100);
 }
 
@@ -584,24 +85,50 @@ function verify_node_arg(cmd, first_arg) {
     }
 }
 
+function get_args(args_arr) {
+    // TODO: parse command options (e.g. --help or -h)?
+
+    return args_arr.map((arg) => arg.value);
+}
+
 function create_node(exp, spawn) {
-    var file_name = exp.args[0];
-    verify_node_arg(cmd, file_name);
+    var first_arg = exp.args[0];
+    verify_node_arg(cmd, first_arg);
 
-    var name = generate_node_name(file_name); // TODO: a name may not be needed
+    var file_name = first_arg.value;
 
-    var nd = new Node(name, spawn, file_name, exp.args.slice(1), exp.attrs);
+    var name = generate_node_name(file_name); // TODO: an identifier may not be needed or could be PID returned by runtime when process starts
+
+    var args = get_args(exp.args.slice(1));
+
+    var nd = new Node(name, spawn, file_name, args, exp.attrs);
     if (exp.group) {
         push_node_group(exp.group, nd);
-    } else if (spawn == false) {
-        throw new Error("A staged node must be assigned to a node group");
+    } else if (spawn == false && within_graph == false) {
+        throw new Error(
+            "A staged node must be assigned to a node group or be defined within a graph"
+        );
     }
 
-    if (spawn == true) {
+    if (spawn == true && within_implicit_graph == false) {
         spawnQueue.push(nd);
     }
 
     return nd;
+}
+
+function create_implicit_graph(op_exp) {
+    var edges = [];
+    within_graph = true;
+    within_implicit_graph = true;
+    edges.push(apply_op(op_exp.operator, op_exp.left, op_exp.right));
+    within_graph = false;
+    within_implicit_graph = false;
+
+    var graph = new Graph(num_implicit_graphs, edges);
+    Graphs[num_implicit_graphs++] = graph;
+    spawnQueue.push(graph);
+    return graph;
 }
 
 function evaluate(exp) {
@@ -615,7 +142,13 @@ function evaluate(exp) {
             return evaluate_cmd(exp);
 
         case "op":
-            return apply_op(exp.operator, exp.left, exp.right);
+            // A graph is implicitly created when a piping is used outside of the connect command edge list
+            // e.g. 10 * (spawn map.js) -> 4 * (spawn reduce.js #camera) ~> spawn reduce.js log.txt
+            if (is_piping_op(exp) && within_graph == false) {
+                return create_implicit_graph(exp);
+            } else {
+                return apply_op(exp.operator, exp.left, exp.right);
+            }
 
         case "list":
             var val = [];
@@ -647,16 +180,9 @@ function evaluate_cmd(exp) {
             return;
 
         case "node":
-            // Automatically assign it to a group as <script> if no name specified?
-            // Must have one argument that's a JS or python file
-            // -check that the file exists
             return create_node(exp, false);
 
         case "spawn":
-            // Spawn can be followed by either a single identifier (of a node group or graph)
-            // or some arguments
-            // Automatically assign a name as <script>.# if no name specified
-
             // If first arg is a string, then we are spawning an existing node group or graph
             var first_arg = exp.args[0];
             if (first_arg.type == "str") {
@@ -667,21 +193,19 @@ function evaluate_cmd(exp) {
                     spawn_graph(first_arg.value);
                 } else {
                     throw new Error(
-                        `\"${first_arg}\" does not correspond to a node group or graph`
+                        `\"${first_arg.value}\" does not correspond to a node group or graph`
                     );
                 }
+                return;
             } else {
-                // We are spawning a process
+                // We are spawning a new node
                 return create_node(exp, true);
             }
-
-        // Return reference to node-group or graph?
 
         case "connect":
             // Create a graph
             // Must have a name
             // Each entry in the list should be an operation
-
             // TODO: ask Kumseok what format the internal graph structure should have
 
             var graph_name = exp.graph;
@@ -691,21 +215,14 @@ function evaluate_cmd(exp) {
                 throw new Error(`Graph \"${graph_name}\" already exists`);
             }
 
-            var edges = evaluate(exp.args[0]);
-            console.log(edges);
+            within_graph = true;
+            var edgeList = evaluate(exp.args[0]);
+            within_graph = false;
 
-            // var edgeList = exp.args[0];
-            // for (var edge of edgeList) {
-            //     if (is_piping_op(exp)) {
-            //         apply_op(edge);
-            //     } else {
-            //         throw new Error(
-            //             "Expecting piping operation in connect list"
-            //         );
-            //     }
-            // }
+            console.log("Graph edgeList: ");
+            console.log(edgeList);
 
-            var graph = new Graph(exp.graph, edges);
+            var graph = new Graph(exp.graph, edgeList);
             Graphs[graph_name] = graph;
             return graph;
 
@@ -729,16 +246,17 @@ function apply_op(op, left_exp, right_exp) {
     switch (op) {
         case "*":
             var x = evaluate(left_exp);
+            var vals = []
             for (var i = 0; i < num(x); i++) {
-                evaluate(right_exp);
+                vals.push(evaluate(right_exp));
             }
-            return;
+            return vals;
         case "~>":
         case "->":
         case "-*>":
         case "~*>":
         case "~/>":
-            return new Edge(eval(left_exp), eval(right_exp), op);
+            return new Edge(evaluate(left_exp), evaluate(right_exp), op);
     }
     throw new Error("Can't apply operator " + op);
 }
@@ -758,9 +276,6 @@ var AST = parse(tokenStream);
 // console.log(AST);
 // console.log();
 
-evaluate(AST);
-
-
 // console.log(AST.prog[0].args[0]);
 // console.log(AST.prog[0].args[0].elems);
 
@@ -772,3 +287,14 @@ evaluate(AST);
 
 // console.log(AST.prog[0].left)
 // console.log(AST.prog[0].right)
+
+evaluate(AST);
+
+console.log("Graphs:");
+console.log(Graphs);
+
+console.log("Node Groups:");
+console.log(NodeGroups);
+
+console.log("Spawn queue:");
+console.log(spawnQueue);
