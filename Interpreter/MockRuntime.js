@@ -145,6 +145,7 @@ class MockRuntime {
 		this.pipes = [];
 	}
 
+	/* equivalent to the unix `ls` command */
 	async listFiles (absPath){
 		if (typeof absPath === 'string'){
 			let tokens = absPath.split('/');
@@ -156,20 +157,23 @@ class MockRuntime {
 		else throw new Error('Invalid argument type for MockRuntime..listFiles');
 	}
 
+	/* equivalent to the unix `ps` command */
 	async listProcesses () {
 		return this.procs;
 	}
 
+	/* returns a list of pipes (unix equivalent doesn't exist) */
 	async listPipes () {
 		return this.pipes;
 	}
 
+	/* starts a new process */
 	async spawn (agentAbsPath){
 		if (typeof agentAbsPath === 'string'){
 			let tokens = agentAbsPath.split('/');
 			if (tokens[0] !== '') throw new Error('MockRuntime..spawn expects an absolute path');
 			let item = this.root.getContent(tokens.slice(1));
-			console.log(item);
+			// console.log(item);
 			if (item instanceof File){
 				let host = selectRandom(this.hosts);
 				let proc = new Process(host, item);
@@ -182,6 +186,7 @@ class MockRuntime {
 		else throw new Error('Invalid argument type for MockRuntime..spawn');
 	}
 
+	/* kills a process */
 	async kill (pid) {
 		let index = this.procs.findIndex(item => item.id === pid);
 		if (index > -1){
@@ -190,6 +195,7 @@ class MockRuntime {
 		else throw new Error('Process with ID = ' + pid + ' does not exist');
 	}
 
+	/* creates a new pipe between 2 processes */
 	async createPipe (sourceId, sinkId) {
 		let id = sourceId + '-' + sinkId;
 
@@ -214,6 +220,7 @@ class MockRuntime {
 		}
 	}
 
+	/* deletes a pipe */
 	async deletePipe (pipeId){
 		let index = this.pipes.findIndex(item => item.id === pipeId);
 		if (index > -1){
@@ -226,23 +233,32 @@ class MockRuntime {
 module.exports = MockRuntime;
 
 (async () => {
+	// create a new mock runtime
 	let runtime = new MockRuntime();
 
+	// list directory 
 	await runtime.listFiles('/home/ubc');
 
+	// spawn process
 	let proc0 = await runtime.spawn('/home/ubc/bin/sensor.js');
 
+	// spawn process
 	let proc1 = await runtime.spawn('/home/ubc/bin/transformer.js');
 
+	// spawn process
 	let proc2 = await runtime.spawn('/home/ubc/bin/actuator.js');
 
+	// create pipe between 0 and 1
 	await runtime.createPipe(proc0, proc1);
 
+	// create pipe between 1 and 2
 	await runtime.createPipe(proc1, proc2);
 
+	// show processes
 	let procs = await runtime.listProcesses();
 	console.log(procs);
 
+	// show pipes
 	let pipes = await runtime.listPipes();
 	console.log(pipes);
 })();
