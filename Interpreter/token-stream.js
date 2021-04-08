@@ -1,7 +1,8 @@
 function TokenStream(input) {
     var current = null;
 
-    var cmds = " ls ps cd pwd cat spawn connect node ";
+    /* ls ps cd pwd cat */
+    var cmds = " spawn connect node ";
     var keywords = " as ";
 
     return {

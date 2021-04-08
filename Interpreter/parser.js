@@ -86,7 +86,7 @@ function parse(input) {
         input.croak("Unexpected token: " + JSON.stringify(input.peek()));
     }
 
-    function maybe_op(left, my_prec, expectIdentifier) {
+    function maybe_op(left, my_prec, expect_id) {
         var tok = is_op();
         if (tok) {
             var his_prec = PRECEDENCE[tok.value];
@@ -97,7 +97,7 @@ function parse(input) {
                         type: "op",
                         operator: tok.value,
                         left: left,
-                        right: maybe_op(parse_atom(expectIdentifier), his_prec),
+                        right: maybe_op(parse_atom(expect_id), his_prec),
                     },
                     my_prec
                 );
@@ -135,6 +135,10 @@ function parse(input) {
 
         // Parse "as" <name>
         var name = parse_name();
+
+        if (!name) {
+            input.croak('A graph created using "connect" must have a name');
+        }
 
         return {
             type: "cmd",
@@ -207,9 +211,9 @@ function parse(input) {
         return name;
     }
 
-    function parse_list(expectIdentifier) {
+    function parse_list(expect_id) {
         var parsed_elems = delimited("[", "]", ",", () =>
-            parse_expression(expectIdentifier)
+            parse_expression(expect_id)
         );
         return {
             type: "list",
@@ -217,17 +221,17 @@ function parse(input) {
         };
     }
 
-    function parse_atom(expectIdentifier) {
+    function parse_atom(expect_id, new_line) {
         // console.log(input.peek());
         if (is_punc("(")) {
             input.next();
-            var exp = parse_expression();
+            var exp = parse_expression(expect_id);
             skip_punc(")");
             return exp;
         }
 
         if (is_list()) {
-            return parse_list(expectIdentifier);
+            return parse_list(expect_id);
         }
 
         if (is_cmd("connect")) {
@@ -244,7 +248,7 @@ function parse(input) {
 
         var tok = input.peek();
 
-        if (expectIdentifier && tok.type == "w") {
+        if (expect_id && tok.type == "w") {
             tok = input.next();
             return {
                 type: "id",
@@ -257,23 +261,31 @@ function parse(input) {
             return tok;
         }
 
+        // If this is the first word after a new line, assume we encountered an uknown command
+        if (new_line && tok.type == "w") {
+            return parse_cmd();
+        }
+
         unexpected();
     }
 
     function parse_toplevel() {
         var prog = [];
+        var new_line = true;
         while (!input.eof()) {
             if (is_new_line()) {
                 input.next();
+                new_line = true;
                 continue;
             }
-            prog.push(parse_expression());
+            prog.push(parse_expression(false, new_line));
+            new_line = false;
         }
         return { type: "prog", prog: prog };
     }
 
-    function parse_expression(expectIdentifier) {
-        return maybe_op(parse_atom(expectIdentifier), 0, expectIdentifier);
+    function parse_expression(expect_id, new_line) {
+        return maybe_op(parse_atom(expect_id, new_line), 0, expect_id);
     }
 }
 

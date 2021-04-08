@@ -15,6 +15,10 @@ const SampleDirectory = {
 				'sensor.js': 'Sensor Application', 
 				'actuator.js': 'Actuator Application',
 				'transformer.js': 'Actuator Application'
+			},
+			'test': {
+				'program_B.js': 'B',
+				'program_D.js': 'D'
 			}
 		}
 	},
@@ -145,6 +149,30 @@ class MockRuntime {
 		this.pipes = [];
 	}
 
+	/* checks if the file exists */
+	async fileExists(absPath){
+		if (typeof absPath === 'string'){
+			let tokens = absPath.split('/');
+			if (tokens[0] !== '') throw new Error('MockRuntime..fileExists expects an absolute path');
+			let item = this.root.getContent(tokens.slice(1));
+			if (item instanceof File) return;
+			else throw new Error("File doesn't exist: ", absPath);
+		}
+		else throw new Error('Invalid argument type for MockRuntime..fileExists');
+	}
+
+	/* checks if the directory exists */
+	async directoryExists(absPath){
+		if (typeof absPath === 'string'){
+			let tokens = absPath.split('/');
+			if (tokens[0] !== '') throw new Error('MockRuntime..fileExists expects an absolute path');
+			let item = this.root.getContent(tokens.slice(1));
+			if (item instanceof Directory) return;
+			else throw new Error("Directory doesn't exist: ", absPath);
+		}
+		else throw new Error('Invalid argument type for MockRuntime..fileExists');
+		}
+
 	/* equivalent to the unix `ls` command */
 	async listFiles (absPath){
 		if (typeof absPath === 'string'){
@@ -232,33 +260,33 @@ class MockRuntime {
 
 module.exports = MockRuntime;
 
-(async () => {
-	// create a new mock runtime
-	let runtime = new MockRuntime();
+// (async () => {
+// 	// create a new mock runtime
+// 	let runtime = new MockRuntime();
 
-	// list directory 
-	await runtime.listFiles('/home/ubc');
+// 	// list directory 
+// 	await runtime.listFiles('/home/ubc');
 
-	// spawn process
-	let proc0 = await runtime.spawn('/home/ubc/bin/sensor.js');
+// 	// spawn process
+// 	let proc0 = await runtime.spawn('/home/ubc/bin/sensor.js');
 
-	// spawn process
-	let proc1 = await runtime.spawn('/home/ubc/bin/transformer.js');
+// 	// spawn process
+// 	let proc1 = await runtime.spawn('/home/ubc/bin/transformer.js');
 
-	// spawn process
-	let proc2 = await runtime.spawn('/home/ubc/bin/actuator.js');
+// 	// spawn process
+// 	let proc2 = await runtime.spawn('/home/ubc/bin/actuator.js');
 
-	// create pipe between 0 and 1
-	await runtime.createPipe(proc0, proc1);
+// 	// create pipe between 0 and 1
+// 	await runtime.createPipe(proc0, proc1);
 
-	// create pipe between 1 and 2
-	await runtime.createPipe(proc1, proc2);
+// 	// create pipe between 1 and 2
+// 	await runtime.createPipe(proc1, proc2);
 
-	// show processes
-	let procs = await runtime.listProcesses();
-	console.log(procs);
+// 	// show processes
+// 	let procs = await runtime.listProcesses();
+// 	console.log(procs);
 
-	// show pipes
-	let pipes = await runtime.listPipes();
-	console.log(pipes);
-})();
+// 	// show pipes
+// 	let pipes = await runtime.listPipes();
+// 	console.log(pipes);
+// })();
