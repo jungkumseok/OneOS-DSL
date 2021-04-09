@@ -17,7 +17,10 @@ const SampleDirectory = {
 				'transformer.js': 'Actuator Application'
 			},
 			'test': {
+				'program_A.js': 'A',
+				'program_A2.js': 'A2',
 				'program_B.js': 'B',
+				'program_C.js': 'C',
 				'program_D.js': 'D'
 			}
 		}
@@ -255,6 +258,12 @@ class MockRuntime {
 			this.pipes.splice(index, 1);
 		}
 		else throw new Error('Pipe with ID = ' + pipeId + ' does not exist');
+	}
+
+	async pipeExists (sourceId, sinkId) {
+		let id = sourceId + '-' + sinkId;
+		let pipeIndex = this.pipes.findIndex(item => item.id === id);
+		return pipeIndex > -1;
 	}
 }
 

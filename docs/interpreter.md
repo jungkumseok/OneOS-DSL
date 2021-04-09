@@ -26,7 +26,7 @@
     type: "cmd",
     cmd: CMD,
     args: [],
-    name: NAME,
+    graph: NAME,
 }
 ```
 
@@ -36,7 +36,7 @@
     type: "cmd",
     cmd: CMD,
     args: [],
-    name: NAME,
+    group: NAME,
     attrs: [],
 }
 ```
@@ -100,6 +100,6 @@ Example: spawn map.js -> spawn reduce.js ~> spawn reduce.js log.txt
 ```
 {
     type: "id",
-    name: NAME
+    val: NAME
 }
 ```

@@ -1,54 +1,64 @@
 /* Spawns the processes and connects pipes */
 
-/* NOTE: The goal is eventually to have the spawner run an algorithme to
+/* NOTE: The goal is to eventually have the spawner run an algorithme to
  * determine optimal placement of the nodes */
 
 function Spawner(env) {
     this.env = env;
 }
 
-Spawner.prototype.spawn_nodes = function (nodes) {
+Spawner.prototype.spawn_nodes = async function (nodes) {
     var spawningNodes = [];
-    for (var node of nodes) {
+    for (let node of nodes) {
+        console.log(node);
+
         spawningNodes.push(
-            this.env.api.spawn(node.script).then((pid) => {
+            this.env.api.spawn(this.env.cwd + "/" + node.script).then((pid) => {
                 node.pid = pid;
             })
         );
     }
 
     return Promise.all(spawningNodes).then(() => {
-        for (var node of nodes) {
+        for (let node of nodes) {
             return Promise.all([
-                connect_out_pipes(node.out_edges),
-                connect_in_pipes(node.in_edges),
+                this.connect_out_pipes(node.out_edges),
+                this.connect_in_pipes(node.in_edges),
             ]);
         }
     });
 };
 
-function connect_out_pipes(out_edges) {
-    var connectingEdges = [];
+Spawner.prototype.connect_out_pipes = async function (out_edges) {
     for (var edge of out_edges) {
-        if (edge.receiver.pid != null) {
-            connectingEdges.push(
-                this.env.api.createPipe(edge.sender.pid, edge.receiver.pid)
-            );
+        var sender_pid = edge.sender.pid;
+        var receiver_pid = edge.receiver.pid;
+        if (receiver_pid != null) {
+            await this.env.api
+                .pipeExists(sender_pid, receiver_pid)
+                .then((exists) => {
+                    if (!exists) {
+                        this.env.api.createPipe(sender_pid, receiver_pid);
+                    }
+                });
         }
     }
-    return Promise.all(connectingEdges);
-}
+};
 
-function connect_in_pipes(in_edges) {
-    var connectingEdges = [];
+Spawner.prototype.connect_in_pipes = async function (in_edges) {
     for (var edge of in_edges) {
-        if (edge.sender.pid != null) {
-            connectingEdges.push(
-                this.env.api.createPipe(edge.sender.pid, edge.receiver.pid)
-            );
+        var sender_pid = edge.sender.pid;
+        var receiver_pid = edge.receiver.pid;
+        if (sender_pid != null) {
+            await this.env.api
+                .pipeExists(sender_pid, receiver_pid)
+                .then((exists) => {
+                    if (!exists) {
+                        this.env.api.createPipe(sender_pid, receiver_pid);
+                    }
+                });
         }
     }
-    return Promise.all(connectingEdges);
-}
+};
 
 module.exports = Spawner;
