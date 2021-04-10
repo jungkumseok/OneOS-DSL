@@ -47,18 +47,24 @@ class Host {
 	constructor (id){
 		this.id = id;
 		this.procs = [];
+		this.tags = [];
 	}
 
 	addProcess (proc){
 		this.procs.push(proc);
 	}
+
+	addTag (tag){
+		this.tags.push(tag);
+	}
 }
 
 class Process {
-	constructor (host, file){
+	constructor (host, file, args){
 		this.id = Process.getID.next().value;
 		this.host = host;
 		this.program = file;
+		this.args = args || [];
 
 		this.host.addProcess(this);
 	}
@@ -173,7 +179,7 @@ class MockRuntime {
 			if (item instanceof Directory) return;
 			else throw new Error("Directory doesn't exist: ", absPath);
 		}
-		else throw new Error('Invalid argument type for MockRuntime..fileExists');
+		else throw new Error('Invalid argument type for MockRuntime..directoryExists');
 		}
 
 	/* equivalent to the unix `ls` command */
@@ -198,8 +204,13 @@ class MockRuntime {
 		return this.pipes;
 	}
 
+	/* returns a list of hosts (unix equivalent doesn't exist) */
+	async listHosts () {
+		return this.hosts;
+	}
+
 	/* starts a new process */
-	async spawn (agentAbsPath){
+	async spawn (agentAbsPath, args){
 		if (typeof agentAbsPath === 'string'){
 			let tokens = agentAbsPath.split('/');
 			if (tokens[0] !== '') throw new Error('MockRuntime..spawn expects an absolute path');
@@ -207,7 +218,7 @@ class MockRuntime {
 			// console.log(item);
 			if (item instanceof File){
 				let host = selectRandom(this.hosts);
-				let proc = new Process(host, item);
+				let proc = new Process(host, item, args);
 				this.procs.push(proc);
 
 				return proc.id;
