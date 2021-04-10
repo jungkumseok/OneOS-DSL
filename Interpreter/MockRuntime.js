@@ -41,6 +41,10 @@ const SampleDirectory = {
 function selectRandom(list) {
 	return list[Math.floor(list.length * Math.random())];
 }
+
+function removeDuplicates(list) {
+	return Array.from(new Set(list));
+}
 // end of helpers
 
 class Host {
@@ -55,7 +59,8 @@ class Host {
 	}
 
 	addTag (tag){
-		this.tags.push(tag);
+		if (!this.tags.includes(tag)) this.tags.push(tag);
+		else throw new Error('Host ' + this.id + ' already has a tag #' + tag);
 	}
 }
 
@@ -209,6 +214,28 @@ class MockRuntime {
 		return this.hosts;
 	}
 
+	/* returns a list of hosts (unix equivalent doesn't exist) */
+	async findHostsByTag (tag, ...moreTags) {
+		let hosts;
+		if (tag instanceof Array && tag.length > 0){
+			hosts = this.hosts.filter(host => tag.reduce((acc, item) => acc && host.tags.includes(item), true));
+		}
+		else if (typeof tag === 'string'){
+			hosts = this.hosts.filter(host => host.tags.includes(tag));
+		}
+		else throw new Error('Invalid argument type for MockRuntime..findHostsByTag');
+
+		if (moreTags.length > 1){
+			let moreHosts = await this.findHostsByTag(moreTags[0], moreTags.slice(1));
+			return removeDuplicates(hosts.concat(moreHosts));
+		}
+		else if (moreTags.length === 1){
+			let moreHosts = await this.findHostsByTag(moreTags[0]);
+			return removeDuplicates(hosts.concat(moreHosts));
+		}
+		return removeDuplicates(hosts);
+	}
+
 	/* starts a new process */
 	async spawn (agentAbsPath, args){
 		if (typeof agentAbsPath === 'string'){
@@ -310,3 +337,30 @@ module.exports = MockRuntime;
 // 	let pipes = await runtime.listPipes();
 // 	console.log(pipes);
 // })();
+
+
+(async () => {
+	// create a new mock runtime
+	let runtime = new MockRuntime();
+
+	// list directory 
+	let hosts = await runtime.listHosts('/home/ubc');
+
+	console.log(hosts);
+
+	hosts[0].addTag('sensor');
+	hosts[1].addTag('sensor');
+	hosts[4].addTag('sensor');
+
+	hosts = await runtime.findHostsByTag('sensor');
+	console.log(hosts);
+
+	runtime.hosts[0].addTag('actuator');
+	runtime.hosts[4].addTag('actuator');
+	hosts = await runtime.findHostsByTag(['sensor', 'actuator']);
+
+	runtime.hosts[3].addTag('compressor');
+
+	hosts = await runtime.findHostsByTag(['sensor', 'actuator'], 'compressor', 'sensor');
+	console.log(hosts);
+})();

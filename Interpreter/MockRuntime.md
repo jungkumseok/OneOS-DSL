@@ -88,3 +88,17 @@ await runtime.listHosts()
 ```
 
 ---
+
+#### (async method) `runtime.findHostsByTag(tag, ...moreTags)`
+
+Returns a list of host machines containing the given `tag`. The given `tag` can be a `string`, or and `Array` of `string` tags. In the case it is an `Array`, it searches for hosts containing all of the given tags. The method accepts variadic arguments and returns a disjunction of filtered results.
+
+For instance, if `runtime.findHostsByTag(['A', 'B', 'C'], 'D', 'E')` is called, the result will include hosts that has all `'A'`, `'B'`, and `'C'` tags, hosts that has a `'D'` tag, and hosts that has an `'E'` tag.
+
+*Example*
+```
+await runtime.findHostsByTag(['sensor', 'quad-core'], 'actuator')
+// returns hosts containing both 'sensor' and 'quad-core' tags, and hosts with 'actuator' tag
+```
+
+---
