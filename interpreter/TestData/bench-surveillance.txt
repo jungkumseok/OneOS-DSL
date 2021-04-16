@@ -1,0 +1,12 @@
+cd /ubc/bench-surveillance
+
+spawn VideoStreamer.js ~>
+[
+	spawn MotionDetector.js ~>
+	[
+		spawn MailSender.js,
+		spawn VideoRecorder.js as "recorder"
+	],
+	recorder,
+	spawn VideoViewer.js
+]

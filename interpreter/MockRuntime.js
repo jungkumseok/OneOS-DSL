@@ -27,7 +27,7 @@ const SampleDirectory = {
 				'map.js': '',
 				'reduce.js': '',
 			},
-			'demo': {
+			'bench-pred': {
 				'BlobRead.js': '',
 				'DecisionTree.js': '',
 				'LinearReg.js': '',
@@ -39,6 +39,44 @@ const SampleDirectory = {
 				'Average.js': '',
 				'ErrorEstimate.js': '',
 				'Sink.js': '',
+			},
+			'bench-etl': {
+				'Source.js': '',
+				'SenMLParse.js': '',
+				'RangeFilter.js': '',
+				'BloomFilter.js': '',
+				'Interpolate.js': '',
+				'Join.js': '',
+				'Annotate.js': '',
+				'CsvToSenML.js': '',
+				'Sink.js': '',
+			},
+			'bench-stats': {
+				'Source.js': '',
+				'SenMLParse.js': '',
+				'Average.js': '',
+				'SlidingLinearReg.js': '',
+				'DistinctCount.js': '',
+				'GroupViz.js': '',
+				'Sink.js': '',
+				'KalmanFilter.js':''
+			},
+			'bench-train': {
+				'Source.js': '',
+				'TableRead.js': '',
+				'MultiVarLinearRegTrain.js': '',
+				'Annotate.js': '',
+				'DecisionTreeTrain.js': '',
+				'BlobWrite.js': '',
+				'MQTTPublish.js': '',
+				'Sink.js': ''
+			},
+			'bench-surveillance': {
+				'VideoStreamer.js': '',
+				'MotionDetector.js': '',
+				'MailSender.js': '',
+				'VideoRecorder.js': '',
+				'VideoViewer.js': '',
 			}
 		}
 	},
@@ -331,28 +369,28 @@ class MockRuntime {
 
 module.exports = MockRuntime;
 
-(async () => {
-	// create a new mock runtime
-	let runtime = new MockRuntime();
+// (async () => {
+// 	// create a new mock runtime
+// 	let runtime = new MockRuntime();
 
-	// list directory 
-	let hosts = await runtime.listHosts('/home/ubc');
+// 	// list directory 
+// 	let hosts = await runtime.listHosts('/home/ubc');
 
-	console.log(hosts);
+// 	console.log(hosts);
 
-	hosts[0].addTag('sensor');
-	hosts[1].addTag('sensor');
-	hosts[4].addTag('sensor');
+// 	hosts[0].addTag('sensor');
+// 	hosts[1].addTag('sensor');
+// 	hosts[4].addTag('sensor');
 
-	hosts = await runtime.findHostsByTag('sensor');
-	console.log(hosts);
+// 	hosts = await runtime.findHostsByTag('sensor');
+// 	console.log(hosts);
 
-	runtime.hosts[0].addTag('actuator');
-	runtime.hosts[4].addTag('actuator');
-	hosts = await runtime.findHostsByTag(['sensor', 'actuator']);
+// 	runtime.hosts[0].addTag('actuator');
+// 	runtime.hosts[4].addTag('actuator');
+// 	hosts = await runtime.findHostsByTag(['sensor', 'actuator']);
 
-	runtime.hosts[3].addTag('compressor');
+// 	runtime.hosts[3].addTag('compressor');
 
-	hosts = await runtime.findHostsByTag(['sensor', 'actuator'], 'compressor', 'sensor');
-	console.log(hosts);
-})();
+// 	hosts = await runtime.findHostsByTag(['sensor', 'actuator'], 'compressor', 'sensor');
+// 	console.log(hosts);
+// })();

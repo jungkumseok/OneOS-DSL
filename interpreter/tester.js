@@ -3,7 +3,7 @@ const Interpreter = require("./Interpreter.js");
 
 const fs = require("fs");
 const input = fs
-    .readFileSync("./interpreter/TestData/demo-test.txt")
+    .readFileSync("./interpreter/TestData/bench-surveillance-2.txt")
     .toString("utf-8");
 
 // var inputStream = InputStream(input);

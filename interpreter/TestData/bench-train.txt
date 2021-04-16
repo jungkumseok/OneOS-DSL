@@ -1,0 +1,8 @@
+cd /ubc/bench-train
+
+spawn Source.js ~> spawn TableRead.js ~>
+[
+	spawn MultiVarLinearRegTrain.js,
+	(spawn Annotate.js ~> spawn DecisionTreeTrain.js)
+] ~>
+spawn BlobWrite.js ~> spawn MQTTPublish.js ~> spawn Sink.js

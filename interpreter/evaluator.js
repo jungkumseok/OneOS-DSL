@@ -26,8 +26,6 @@ function Graph(name) {
 
 // TODO: move these to the environment?
 
-
-
 function is_node_group(env, name) {
     return env.NodeGroups[name] != undefined;
 }
@@ -37,8 +35,8 @@ function is_graph(env, name) {
 }
 
 function is_piping_op(exp) {
-    var piping_ops = " * -> -*> ~> ~/> ~*> ";
-    return exp.type == "op" && piping_ops.includes(exp.operator) >= 0;
+    var piping_ops = " -> -*> ~> ~/> ~*> ";
+    return exp.type == "op" && piping_ops.includes(" " + exp.operator + " ");
 }
 
 function get_edge(sender, receiver) {
@@ -132,6 +130,11 @@ function create_node(env, exp, spawn) {
 }
 
 function create_edges(env, senders, receivers, op) {
+    console.log("Sender")
+    console.log(senders);
+    console.log("Receiver")
+    console.log(receivers);
+
     if (!Array.isArray(senders)) senders = [senders];
     if (!Array.isArray(receivers)) receivers = [receivers];
 
@@ -150,12 +153,15 @@ function create_edges(env, senders, receivers, op) {
     for (var i = 0; i < receivers.length; i++) {
         var receiver = receivers[i];
         if (typeof receiver == "string") {
+            // console.log(get_node_group(env, receiver));
             // Get the corresponding node group
             new_receivers = new_receivers.concat(get_node_group(env, receiver));
         } else {
             new_receivers.push(receiver);
         }
     }
+
+    // console.log(new_receivers)
 
     for (var sender of new_senders) {
         for (var receiver of new_receivers) {
@@ -171,6 +177,8 @@ function create_edges(env, senders, receivers, op) {
             env.curr_graph.nodes.add(receiver);
         }
     }
+
+    console.log(receivers)
 }
 
 async function create_implicit_graph(op_exp, env) {
@@ -304,6 +312,7 @@ async function apply_op(env, op, left_exp, right_exp) {
             var senders = await evaluate(left_exp, env);
             var receivers = await evaluate(right_exp, env);
             create_edges(env, senders, receivers, op);
+            console.log(receivers)
             return receivers; // Return receivers so we can chain pipes
     }
     throw new Error("Can't apply operator " + op);

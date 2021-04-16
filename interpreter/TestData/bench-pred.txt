@@ -1,0 +1,23 @@
+cd /ubc/bench-pred
+
+spawn BlobRead.js as "Reader"						
+node DecisionTree.js as "DecisionTree"				
+3 * (node LinearReg.js #LargeCPU as "LinearReg")
+node MQTTPub.js as "Publisher"
+
+connect [
+	node MQTTSub.js ~> Reader,
+	Reader ~> DecisionTree,
+	Reader -> LinearReg,				
+	node Source.js ~> node Parse.js as "Parse",
+	Parse ~> [DecisionTree, node Average.js as "Avg"],
+	Parse -> LinearReg,
+
+	[LinearReg, Avg] ~> node ErrorEstimate.js #LargeMem ~> Publisher,
+	DecisionTree ~> Publisher,
+	Publisher ~> node Sink.js,
+] as "ML-PRED"
+
+spawn "ML-PRED"									
+
+2 * (spawn LinearReg.js #LargeCPU as "LinearReg")	

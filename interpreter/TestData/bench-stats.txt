@@ -1,0 +1,9 @@
+cd /ubc/bench-stats
+
+spawn Source.js ~> spawn SenMLParse.js ~>
+[
+	spawn Average.js,
+	(spawn KalmanFilter.js ~> spawn SlidingLinearReg.js),
+	spawn DistinctCount.js
+] ~>
+spawn GroupViz.js ~> spawn Sink.js

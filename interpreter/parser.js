@@ -82,24 +82,42 @@ function parse(input) {
         else input.croak('Expecting command: "' + op + '"');
     }
 
+    function skip_while(is_type) {
+        while (is_type()) {
+            input.next();
+        }
+    }
+
     function unexpected() {
         input.croak("Unexpected token: " + JSON.stringify(input.peek()));
     }
 
     function maybe_op(left, my_prec, expect_id) {
         var tok = is_op();
+
         if (tok) {
             var his_prec = PRECEDENCE[tok.value];
             if (his_prec > my_prec) {
                 input.next();
+
+                /* Allow piping operations to span multiple lines */
+                if (tok && tok.value != "*") {
+                    skip_while(is_new_line);
+                }
+
                 return maybe_op(
                     {
                         type: "op",
                         operator: tok.value,
                         left: left,
-                        right: maybe_op(parse_atom(expect_id), his_prec),
+                        right: maybe_op(
+                            parse_atom(expect_id),
+                            his_prec,
+                            expect_id
+                        ),
                     },
-                    my_prec
+                    my_prec,
+                    expect_id
                 );
             }
         }
@@ -111,9 +129,13 @@ function parse(input) {
         var first = true;
         skip_punc(start);
         while (!input.eof()) {
+            skip_while(is_new_line);
             if (is_punc(stop)) break;
             if (first) first = false;
-            else skip_punc(separator);
+            else {
+                skip_punc(separator);
+                skip_while(is_new_line);
+            }
             if (is_punc(stop)) break;
             a.push(parser());
         }
@@ -264,13 +286,6 @@ function parse(input) {
         // If this is the first word after a new line, assume we encountered an uknown command
         if (new_line && tok.type == "w") {
             return parse_cmd();
-        }
-
-        // New lines to not split of statements within a list
-        // TODO: make a separate flag to expect_id so we know if we are in a list
-        if (expect_id && tok.type == "new_line") {
-            input.next()
-            return parse_atom(expect_id, false)
         }
 
         unexpected();
