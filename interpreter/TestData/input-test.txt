@@ -1,0 +1,19 @@
+echo "hi"
+ls
+cat log.txt
+
+cd /ubc/test
+
+spawn program_A.js as "A"
+node program_A2.js log.txt as "A"
+node program_C.js as "C"
+
+connect [A ~> C ~> node program_D.js, A ~> node program_D.js, node program_B.js as "B" ~> C] as "graph_A"
+spawn "graph_A"
+
+connect [A ~> [C, B ~> A]] as "Graph_B"
+
+
+spawn logger.js gpio1.log #webcam-2 as "Logger"
+
+10 * (spawn map.js) -> 4 * (spawn reduce.js #camera) ~> spawn reduce.js log.txt

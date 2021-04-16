@@ -1,0 +1,10 @@
+ls
+
+spawn program_A.js as "A"
+node program_A2.js log.txt as "A"
+node program_C.js as "C"
+
+connect [A ~> C, A ~> node program_D.js, node program_B.js as "B" ~> C] as "graph_A"
+spawn "graph_A"
+
+connect [A ~> [C, B ~> A]] as "Graph_B"

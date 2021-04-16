@@ -21,7 +21,24 @@ const SampleDirectory = {
 				'program_A2.js': 'A2',
 				'program_B.js': 'B',
 				'program_C.js': 'C',
-				'program_D.js': 'D'
+				'program_D.js': 'D',
+				'gpio1.js': '',
+				'logger.js': '',
+				'map.js': '',
+				'reduce.js': '',
+			},
+			'demo': {
+				'BlobRead.js': '',
+				'DecisionTree.js': '',
+				'LinearReg.js': '',
+				'MQTTPub.js': '',
+				'MQTTSub.js': '',
+				'Source.js': '',
+				'logger.js': '',
+				'Parse.js': '',
+				'Average.js': '',
+				'ErrorEstimate.js': '',
+				'Sink.js': '',
 			}
 		}
 	},
@@ -264,6 +281,12 @@ class MockRuntime {
 		else throw new Error('Process with ID = ' + pid + ' does not exist');
 	}
 
+	/* Checks if a process exists */
+	async processExists (pid) {
+		let index = this.procs.findIndex(item => item.id === pid);
+		return index > -1;
+	}
+
 	/* creates a new pipe between 2 processes */
 	async createPipe (sourceId, sinkId) {
 		let id = sourceId + '-' + sinkId;
@@ -298,6 +321,7 @@ class MockRuntime {
 		else throw new Error('Pipe with ID = ' + pipeId + ' does not exist');
 	}
 
+	/* Checks if a pipe exists */
 	async pipeExists (sourceId, sinkId) {
 		let id = sourceId + '-' + sinkId;
 		let pipeIndex = this.pipes.findIndex(item => item.id === id);
@@ -306,38 +330,6 @@ class MockRuntime {
 }
 
 module.exports = MockRuntime;
-
-// (async () => {
-// 	// create a new mock runtime
-// 	let runtime = new MockRuntime();
-
-// 	// list directory 
-// 	await runtime.listFiles('/home/ubc');
-
-// 	// spawn process
-// 	let proc0 = await runtime.spawn('/home/ubc/bin/sensor.js');
-
-// 	// spawn process
-// 	let proc1 = await runtime.spawn('/home/ubc/bin/transformer.js');
-
-// 	// spawn process
-// 	let proc2 = await runtime.spawn('/home/ubc/bin/actuator.js');
-
-// 	// create pipe between 0 and 1
-// 	await runtime.createPipe(proc0, proc1);
-
-// 	// create pipe between 1 and 2
-// 	await runtime.createPipe(proc1, proc2);
-
-// 	// show processes
-// 	let procs = await runtime.listProcesses();
-// 	console.log(procs);
-
-// 	// show pipes
-// 	let pipes = await runtime.listPipes();
-// 	console.log(pipes);
-// })();
-
 
 (async () => {
 	// create a new mock runtime

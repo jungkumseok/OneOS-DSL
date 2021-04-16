@@ -266,6 +266,13 @@ function parse(input) {
             return parse_cmd();
         }
 
+        // New lines to not split of statements within a list
+        // TODO: make a separate flag to expect_id so we know if we are in a list
+        if (expect_id && tok.type == "new_line") {
+            input.next()
+            return parse_atom(expect_id, false)
+        }
+
         unexpected();
     }
 

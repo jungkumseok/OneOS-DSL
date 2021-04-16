@@ -1,0 +1,10 @@
+cd /ubc/demo
+
+spawn BlobRead.js as "Reader"
+node DecisionTree.js as "DecisionTree"
+3 * (node LinearReg.js #LargeCPU as "LinearReg")
+node MQTTPub.js as "Publisher"
+
+connect [node MQTTSub.js ~> Reader,	Reader ~> DecisionTree,	Reader -> LinearReg, node Source.js ~> node Parse.js as "Parse", Parse ~> [DecisionTree, node Average.js as "Avg"],	Parse -> LinearReg, [LinearReg, Avg] ~> node ErrorEstimate.js #LargeMem as "ErrEst", ErrEst ~> Publisher, Publisher ~> node Sink.js as "Sink", DecisionTree ~> Publisher, Publisher ~> Sink] as "ML-PRED"
+
+spawn "ML-PRED"

@@ -7,7 +7,7 @@ node program_A2.js log.txt as "A"
 node program_C.js as "C"
 
 connect [A ~> C, A ~> node program_D.js, node program_B.js ~> C] as "graph_A"
-spawn "graphA"
+spawn "graph_A"
 
 spawn logger.js gpio1.log #webcam-2 as "Logger"
 

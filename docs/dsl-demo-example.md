@@ -1,3 +1,5 @@
+# Benchmarks
+
 ### RIoTBench-PRED
 
 ![RIoTBench PRED](images/riot-pred.png)
@@ -83,4 +85,77 @@ ErrorEstimate.js #LargeMem
 
 "Sink":
 Sink.js
+```
+
+### RIoTBench-ETL
+
+![RIoTBench ETL](images/riot-etl.png)
+* From [dream-lab/riot-bench](https://github.com/dream-lab/riot-bench#extraction-transform-and-load--dataflow-etl)
+
+**OneOS-DSL Expression**
+```
+spawn Source.js
+~> spawn SenMLParse.js
+~> spawn RangeFilter.js
+~> spawn BloomFilter.js
+~> spawn Interpolate.js
+~> spawn Join.js
+~> spawn Annotate.js
+~> spawn CsvToSenML.js
+~> spawn Sink.js
+```
+
+### RIoTBench-STATS
+
+![RIoTBench STATS](images/riot-stats.png)
+* From [dream-lab/riot-bench](https://github.com/dream-lab/riot-bench#statistical-summarization-dataflow-stats)
+
+**OneOS-DSL Expression**
+```
+spawn Source.js
+~> spawn SenMLParse.js
+~> [
+	spawn Average.js,
+	(spawn KalmanFilter.js ~> spawn SlidingLinearReg.js),
+	spawn DistinctCount.js
+]
+~> spawn GroupViz.js
+~> spawn Sink.js
+```
+
+### RIoTBench-TRAIN
+
+![RIoTBench TRAIN](images/riot-train.png)
+* From [dream-lab/riot-bench](https://github.com/dream-lab/riot-bench#model-training-dataflow-train)
+
+**OneOS-DSL Expression**
+```
+spawn Source.js
+~> spawn TableRead.js
+~> [
+	spawn MultiVarLinearRegTrain.js,
+	(spawn Annotate.js ~> spawn DecisionTreeTrain.js)
+]
+~> spawn BlobWrite.js
+~> spawn MQTTPublish.js
+~> spawn Sink.js
+```
+
+
+### Video Surveillance
+
+![ThingsJS Surveillance](images/thingsjs-video.png)
+
+**OneOS-DSL Expression**
+```
+spawn VideoStreamer.js
+~> [
+	spawn MotionDetector.js
+	~> [
+		spawn MailSender.js,
+		spawn VideoRecorder.js as recorder
+	],
+	recorder,
+	spawn VideoViewer.js
+]
 ```
