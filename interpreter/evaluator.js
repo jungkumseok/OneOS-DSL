@@ -129,39 +129,32 @@ function create_node(env, exp, spawn) {
     return nd;
 }
 
-function create_edges(env, senders, receivers, op) {
-    console.log("Sender")
-    console.log(senders);
-    console.log("Receiver")
-    console.log(receivers);
+function get_nodes(env, nested_node_arr) {
+    var node_arr = [];
+    for (var i = 0; i < nested_node_arr.length; i++) {
+        if (Array.isArray(nested_node_arr[i])) {
+            node_arr = node_arr.concat(get_nodes(env, nested_node_arr[i]));
+        } else {
+            var node = nested_node_arr[i];
+            if (typeof node == "string") {
+                // Get the corresponding node group
+                node_arr = node_arr.concat(get_node_group(env, node));
+            } else {
+                node_arr.push(node);
+            }
+        }
+    }
+    return node_arr;
+}
 
+function create_edges(env, senders, receivers, op) {
     if (!Array.isArray(senders)) senders = [senders];
     if (!Array.isArray(receivers)) receivers = [receivers];
 
-    var new_senders = [];
-    for (var i = 0; i < senders.length; i++) {
-        var sender = senders[i];
-        if (typeof sender == "string") {
-            // Get the corresponding node group
-            new_senders = new_senders.concat(get_node_group(env, sender));
-        } else {
-            new_senders.push(sender);
-        }
-    }
-
-    var new_receivers = [];
-    for (var i = 0; i < receivers.length; i++) {
-        var receiver = receivers[i];
-        if (typeof receiver == "string") {
-            // console.log(get_node_group(env, receiver));
-            // Get the corresponding node group
-            new_receivers = new_receivers.concat(get_node_group(env, receiver));
-        } else {
-            new_receivers.push(receiver);
-        }
-    }
-
-    // console.log(new_receivers)
+    /* Note: senders and receivers arrays may contain nested arrays
+    and names of node groups rather than the actual nodes */
+    new_senders = get_nodes(env, senders);
+    new_receivers = get_nodes(env, receivers);
 
     for (var sender of new_senders) {
         for (var receiver of new_receivers) {
@@ -178,7 +171,7 @@ function create_edges(env, senders, receivers, op) {
         }
     }
 
-    console.log(receivers)
+    return new_senders;
 }
 
 async function create_implicit_graph(op_exp, env) {
@@ -311,9 +304,8 @@ async function apply_op(env, op, left_exp, right_exp) {
         case "~/>":
             var senders = await evaluate(left_exp, env);
             var receivers = await evaluate(right_exp, env);
-            create_edges(env, senders, receivers, op);
-            console.log(receivers)
-            return receivers; // Return receivers so we can chain pipes
+            senders = create_edges(env, senders, receivers, op);
+            return senders; // Return senders so we can chain pipes
     }
     throw new Error("Can't apply operator " + op);
 }

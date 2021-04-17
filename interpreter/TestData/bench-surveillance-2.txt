@@ -3,14 +3,15 @@ cd /ubc/bench-surveillance
 spawn VideoStreamer.js as "streamer"
 connect [
 	streamer ~>
-        [spawn MotionDetector.js ~>
-            [
-                spawn MailSender.js,
-                spawn VideoRecorder.js as "recorder"
-            ],
-        recorder,
-        spawn VideoViewer.js
-    ]
+        [
+            spawn MotionDetector.js ~>
+                [
+                    spawn MailSender.js,
+                    spawn VideoRecorder.js as "recorder"
+                ],
+            recorder,
+            spawn VideoViewer.js
+        ]
 ] as "VideoStreamGraph"
 
 spawn "VideoStreamGraph"
