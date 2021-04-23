@@ -1,5 +1,7 @@
 const stream = require('stream');
 
+const windows = process.platform === "win32"
+
 const SampleDirectory = {
 	'bin': {
 		'apt': 'Package Manager',
@@ -169,8 +171,8 @@ class Directory {
 
 	getContent (relPath) {
 		if (typeof relPath === 'string'){
-			let tokens = relPath.split('/');
-			if (tokens[0] === '') throw new Error('Directory..getContent expects a relative path');
+			let tokens = windows ? relPath.split('\\') : relPath.split('/');
+			if ((!windows && tokens[0] !== '') || (windows && tokens[0] !== 'C:')) throw new Error('MockRuntime..fileExists expects a relative path');
 			return this.getContent(tokens);
 		}
 		else if (relPath instanceof Array && relPath.length > 0){
@@ -221,8 +223,8 @@ class MockRuntime {
 	/* checks if the file exists */
 	async fileExists(absPath){
 		if (typeof absPath === 'string'){
-			let tokens = absPath.split('/');
-			if (tokens[0] !== '') throw new Error('MockRuntime..fileExists expects an absolute path');
+			let tokens = windows ? absPath.split('\\') : absPath.split('/');
+			if ((!windows && tokens[0] !== '') || (windows && tokens[0] !== 'C:')) throw new Error('MockRuntime..fileExists expects an absolute path');
 			let item = this.root.getContent(tokens.slice(1));
 			if (item instanceof File) return;
 			else throw new Error("File doesn't exist: ", absPath);
@@ -233,8 +235,8 @@ class MockRuntime {
 	/* checks if the directory exists */
 	async directoryExists(absPath){
 		if (typeof absPath === 'string'){
-			let tokens = absPath.split('/');
-			if (tokens[0] !== '') throw new Error('MockRuntime..fileExists expects an absolute path');
+			let tokens = windows ? absPath.split('\\') : absPath.split('/');
+			if ((!windows && tokens[0] !== '') || (windows && tokens[0] !== 'C:')) throw new Error('MockRuntime..fileExists expects an absolute path');
 			let item = this.root.getContent(tokens.slice(1));
 			if (item instanceof Directory) return;
 			else throw new Error("Directory doesn't exist: ", absPath);
@@ -245,8 +247,8 @@ class MockRuntime {
 	/* equivalent to the unix `ls` command */
 	async listFiles (absPath){
 		if (typeof absPath === 'string'){
-			let tokens = absPath.split('/');
-			if (tokens[0] !== '') throw new Error('MockRuntime..listFiles expects an absolute path');
+			let tokens = windows ? absPath.split('\\') : absPath.split('/');
+			if ((!windows && tokens[0] !== '') || (windows && tokens[0] !== 'C:')) throw new Error('MockRuntime..fileExists expects an absolute path');
 			let item = this.root.getContent(tokens.slice(1));
 			if (item instanceof Directory) return item.listContent();
 			else return [ { name: item.name, type: 'file' } ];
@@ -261,7 +263,12 @@ class MockRuntime {
 
 	/* returns a list of pipes (unix equivalent doesn't exist) */
 	async listPipes () {
-		return this.pipes;
+		// return this.pipes;
+		var strArr = []
+		for (var pipe of this.pipes) {
+			strArr.push(`${pipe.source.program.name} ~> ${pipe.sink.program.name}`)
+		}
+		return strArr
 	}
 
 	/* returns a list of hosts (unix equivalent doesn't exist) */
@@ -292,10 +299,10 @@ class MockRuntime {
 	}
 
 	/* starts a new process */
-	async spawn (agentAbsPath, args){
+	async spawn (agentAbsPath, args, ...tags){
 		if (typeof agentAbsPath === 'string'){
-			let tokens = agentAbsPath.split('/');
-			if (tokens[0] !== '') throw new Error('MockRuntime..spawn expects an absolute path');
+			let tokens = windows ? agentAbsPath.split('\\') : agentAbsPath.split('/');
+			if ((!windows && tokens[0] !== '') || (windows && tokens[0] !== 'C:')) throw new Error('MockRuntime..fileExists expects an absolute path');
 			let item = this.root.getContent(tokens.slice(1));
 			// console.log(item);
 			if (item instanceof File){

@@ -1,3 +1,5 @@
+const path = require("path");
+
 /* Spawns the processes and connects pipes */
 
 /* NOTE: The goal is to eventually have the spawner run an algorithme to
@@ -10,22 +12,26 @@ function Spawner(env) {
 Spawner.prototype.spawn_nodes = async function (nodes) {
     var spawningNodes = [];
     for (let node of nodes) {
-        console.log(node);
-
         spawningNodes.push(
-            this.env.api.spawn(this.env.cwd + "/" + node.script).then((pid) => {
-                node.pid = pid;
-            })
+            this.env.api
+                .spawn(path.resolve(this.env.cwd, node.script))
+                .then((pid) => {
+                    node.pid = pid;
+                })
         );
     }
 
-    return Promise.all(spawningNodes).then(() => {
+    return Promise.all(spawningNodes).then(async () => {
+        var connectingPipes = [];
         for (let node of nodes) {
-            return Promise.all([
-                this.connect_out_pipes(node.out_edges),
-                this.connect_in_pipes(node.in_edges),
-            ]);
+            connectingPipes.push(
+                await Promise.all([
+                    this.connect_out_pipes(node.out_edges),
+                    this.connect_in_pipes(node.in_edges),
+                ])
+            );
         }
+        return Promise.all(connectingPipes);
     });
 };
 
@@ -38,7 +44,10 @@ Spawner.prototype.connect_out_pipes = async function (out_edges) {
                 .pipeExists(sender_pid, receiver_pid)
                 .then((exists) => {
                     if (!exists) {
-                        this.env.api.createPipe(sender_pid, receiver_pid);
+                        return this.env.api.createPipe(
+                            sender_pid,
+                            receiver_pid
+                        );
                     }
                 });
         }
@@ -54,7 +63,10 @@ Spawner.prototype.connect_in_pipes = async function (in_edges) {
                 .pipeExists(sender_pid, receiver_pid)
                 .then((exists) => {
                     if (!exists) {
-                        this.env.api.createPipe(sender_pid, receiver_pid);
+                        return this.env.api.createPipe(
+                            sender_pid,
+                            receiver_pid
+                        );
                     }
                 });
         }

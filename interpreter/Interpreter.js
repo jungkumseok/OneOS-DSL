@@ -2,6 +2,9 @@ const InputStream = require("./InputStream.js");
 const TokenStream = require("./TokenStream.js");
 const parse = require("./parser.js");
 const evaluate = require("./evaluator.js");
+const path = require("path");
+
+const windows = process.platform === "win32";
 
 function Environment(system_api) {
     this.cmds = {};
@@ -20,6 +23,10 @@ Environment.prototype = {
     def: function (name, value) {
         return Promise.resolve((this.cmds[name] = value));
     },
+    doneEval: function () {
+        this.verifs = [];
+        this.spawnQueue.clear();
+    },
 };
 
 function Interpreter(runtime_api, builtins) {
@@ -32,7 +39,7 @@ function Interpreter(runtime_api, builtins) {
     });
 
     // Set environment variables
-    this.environ.home = "/home";
+    this.environ.home = windows ? "C:\\home" : "/home";
     this.environ.cwd = this.environ.home;
 
     // Maps name to a graph
@@ -61,15 +68,16 @@ Interpreter.BUILTINS = {
     },
     cd: (args, env) => {
         console.log(`cd ${args}`);
-        var path = args[0];
-        if (!path) {
+        var cd_path = args[0];
+        if (!cd_path) {
             env.cwd = env.home;
         }
-        if (typeof path != "string") {
-            throw new Error("cd - invalid path: ", path);
+        if (typeof cd_path != "string") {
+            throw new Error("cd - invalid path: ", cd_path);
         }
-        return env.api.directoryExists(env.cwd + path).then((cwd) => {
-            env.cwd = env.cwd + path; // TODO: prevent double forward slashes
+        var new_cwd = path.resolve(env.cwd, cd_path);
+        return env.api.directoryExists(new_cwd).then(() => {
+            env.cwd = new_cwd;
         });
     },
     mkdir: (args, env) => {
@@ -86,6 +94,10 @@ Interpreter.BUILTINS = {
         console.log(`ps ${args}`);
         return env.api.listProcesses();
     },
+    ls_pipes: (args, env) => {
+        console.log(`ls_pipes ${args}`);
+        return env.api.listPipes();
+    },
 };
 
 Interpreter.prototype.compile = function (input_str) {
@@ -95,7 +107,7 @@ Interpreter.prototype.compile = function (input_str) {
 Interpreter.prototype.evaluate = evaluate;
 
 Interpreter.prototype.eval = async function (str) {
-    console.log("[Interpreter] trying to evaluate " + str);
+    // console.log("[Interpreter] trying to evaluate " + str);
     return this.evaluate(this.compile(str), this.environ);
 };
 

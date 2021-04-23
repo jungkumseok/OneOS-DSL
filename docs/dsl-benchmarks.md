@@ -55,8 +55,8 @@ LinearReg.js #LargeCPU ~> ErrorEstimate.js #LargeMem
 LinearReg.js #LargeCPU ~> ErrorEstimate.js #LargeMem
 Average.js ~> ErrorEstimate.js #LargeMem
 ErrorEstimate.js #LargeMem ~> MQTTPub.js
-MQTTPub.js ~> Sink.js
 DecisionTree.js ~> MQTTPub.js
+MQTTPub.js ~> Sink.js
 ```
 
 ### Resulting Node Groups

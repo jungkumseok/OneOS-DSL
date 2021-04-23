@@ -1,5 +1,4 @@
 const Spawner = require("./Spawner.js");
-
 const path = require("path");
 
 function Node(script, args, attrs) {
@@ -96,8 +95,7 @@ function verify_node_arg(env, cmd, first_arg) {
         );
     } else {
         // Check the file exists
-        console.log(env.cwd + "/" + arg_val);
-        env.verifs.push(env.api.fileExists(env.cwd + "/" + arg_val)); // TODO: resolve path
+        env.verifs.push(env.api.fileExists(path.resolve(env.cwd, arg_val)));
     }
 }
 
@@ -171,7 +169,7 @@ function create_edges(env, senders, receivers, op) {
         }
     }
 
-    return new_senders;
+    return new_receivers;
 }
 
 async function create_implicit_graph(op_exp, env) {
@@ -214,15 +212,22 @@ async function evaluate(exp, env) {
             return val;
 
         case "prog":
+            var res = [];
             for (var exp of exp.prog) {
-                var res = await evaluate(exp, env);
+                res.push(await evaluate(exp, env));
                 // console.log(res); // TODO: remove print after debugging
             }
 
             // Wait until async verifications resolve
-            return await Promise.all(env.verifs).then(() =>
-                new Spawner(env).spawn_nodes(env.spawnQueue)
-            );
+            await Promise.all(env.verifs)
+                .then(() => new Spawner(env).spawn_nodes(env.spawnQueue))
+                .catch((err) => {
+                    env.doneEval();
+                    throw err;
+                });
+            env.doneEval();
+
+            return res;
 
         default:
             throw new Error("I don't know how to evaluate " + exp.type);
@@ -304,8 +309,8 @@ async function apply_op(env, op, left_exp, right_exp) {
         case "~/>":
             var senders = await evaluate(left_exp, env);
             var receivers = await evaluate(right_exp, env);
-            senders = create_edges(env, senders, receivers, op);
-            return senders; // Return senders so we can chain pipes
+            parsed_receivers = create_edges(env, senders, receivers, op);
+            return parsed_receivers; // Return receivers so we can chain pipes
     }
     throw new Error("Can't apply operator " + op);
 }
