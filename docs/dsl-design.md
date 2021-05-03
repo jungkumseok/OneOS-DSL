@@ -19,17 +19,19 @@ An edge is a one-way communication channel between any combination of two Nodes 
 ### Graph
 A collection of edges. Graphs can be created by linking *spawn* commands with pipes or using the *connect* command.
 
-## Current Commands
-- ls - List directories
-- ps - List processes
-- cd - Change directories
-- pwd - Print Working Directory
-- cat - Concatenate
+## Supported Bash-Like Commands
+- ls
+- ps
+- cd
+- pwd
 
 I think continuing to base the language on Bash syntax makes sense. People using OneOS will almost certainly be familiar with Bash basics so I don't see any benefit in creating new syntax for common commands.
 
+## ls_pipes
+Prints list of all pipes in the runtime.
+
 ## Lists
-Lists will be supported using JavaScript-style syntax:
+Lists are supported using JavaScript-style syntax:
 
 ```
 [item1, item2, item3, ...]
@@ -43,7 +45,6 @@ x * (cmd)
 </pre>
 
 > Note: This syntax needs to be revised to disambiguate arithmetic ops if they are added to the DSL.
-
 
 ## Spawn
 The *spawn* command will be used to start processes immediately. It can be used to spawn a new process or spawn a Node Group or Graph. Spawning a Node Group or Graph means all staged nodes within the group or graph are spawned.
