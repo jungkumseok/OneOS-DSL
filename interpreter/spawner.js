@@ -1,5 +1,5 @@
 const path = require("path");
-const graphTypes = require("./GraphTypes.js");
+const graphTypes = require("./structures.js");
 const Node = graphTypes.Node;
 const Edge = graphTypes.Edge;
 const Graph = graphTypes.Graph;
@@ -62,13 +62,13 @@ Spawner.prototype.create_pipes = async function (edges) {
             await this.env.api
                 .pipeExists(sender_pid, receiver_pid)
                 .then((exists) => {
-                    console.log(
-                        exists +
-                        " " +
-                        edge.sender.script +
-                        " ~> " +
-                        edge.receiver.script
-                    );
+                    // console.log(
+                    //     exists +
+                    //     " " +
+                    //     edge.sender.script +
+                    //     " ~> " +
+                    //     edge.receiver.script
+                    // );
                     if (!exists) {
                         return this.env.api.createPipe(
                             sender_pid,

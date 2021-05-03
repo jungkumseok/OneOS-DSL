@@ -1,6 +1,6 @@
 const readline = require("readline");
-const Interpreter = require("./Interpreter.js");
-const MockRuntime = require("./MockRuntime.js");
+const Interpreter = require("./interpreter.js");
+const MockRuntime = require("./mock-runtime.js");
 const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,

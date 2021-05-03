@@ -1,7 +1,7 @@
-const Spawner = require("./Spawner.js");
+const Spawner = require("./spawner.js");
 const path = require("path");
 
-const graphTypes = require("./GraphTypes.js");
+const graphTypes = require("./structures.js");
 const Node = graphTypes.Node;
 const Edge = graphTypes.Edge;
 const Graph = graphTypes.Graph;
@@ -48,7 +48,7 @@ function spawn_graph(env, graph) {
         for (var sender of senders) {
             for (var receiver of receivers) {
                 // Explictly create edges if both nodes are spawned.
-                if (sender.pid && receiver.pid) {
+                if (sender.pid != null && receiver.pid != null) {
                     env.edgeSpawnQueue.add(new Edge(sender, receiver));
                 } else {
                     if (sender.pid == null) {

@@ -1,5 +1,5 @@
-const MockRuntime = require("./MockRuntime.js");
-const Interpreter = require("./Interpreter.js");
+const MockRuntime = require("./mock-runtime.js");
+const Interpreter = require("./interpreter.js");
 
 const fs = require("fs");
 const input = fs

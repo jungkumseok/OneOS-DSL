@@ -1,5 +1,5 @@
-const InputStream = require("./InputStream.js");
-const TokenStream = require("./TokenStream.js");
+const InputStream = require("./input-stream.js");
+const TokenStream = require("./token-stream.js");
 const parse = require("./parser.js");
 const evaluate = require("./evaluator.js");
 const path = require("path");
