@@ -1,5 +1,24 @@
 # OneOS Syntax and Semantics
 
+## Terminology
+### Nodes
+Nodes are related to processes. A node contains all the information needed to spawn a single process in the runtime (e.g. script, args, and tags).
+
+#### Staged Node
+A staged node is created with the *node* command. A staged node contains all the information needed to create a process in the runtime, but the process hasn't been spawned (aka created) yet.
+
+#### Spawned Node
+A spawned node is created with the *spawn* command. A spawned node contains all the information needed to create a process in the runtime and the process has been spawned.
+
+### Node Groups
+Node Groups are named collections of one or more nodes. Grouping nodes under names makes creating a graph with the *connect* command easy. Nodes automatically inherit any edges to or from the Node Group.
+
+### Edges
+An edge is a one-way communication channel between any combination of two Nodes or NodeGroups.
+
+### Graph
+A collection of edges. Graphs can be created by linking *spawn* commands with pipes or using the *connect* command.
+
 ## Current Commands
 - ls - List directories
 - ps - List processes
@@ -10,7 +29,7 @@
 I think continuing to base the language on Bash syntax makes sense. People using OneOS will almost certainly be familiar with Bash basics so I don't see any benefit in creating new syntax for common commands.
 
 ## Lists
-Lists will be supported using JavaScript/Python-style syntax:
+Lists will be supported using JavaScript-style syntax:
 
 ```
 [item1, item2, item3, ...]
@@ -23,50 +42,43 @@ To easily execute the same command *x* number of times, a multiplier may be spec
 x * (cmd)
 </pre>
 
-> *Kumseok:* If we plan to support arithmetic operations in our DSL, we may have to revise this syntax to disambiguate arithmetic ops. For now, I don't see much use for arithmetic ops in our DSL so I think this syntax is good.
+> Note: This syntax needs to be revised to disambiguate arithmetic ops if they are added to the DSL.
 
 
 ## Spawn
-The *spawn* command will be used to start processes
+The *spawn* command will be used to start processes immediately. It can be used to spawn a new process or spawn a Node Group or Graph. Spawning a Node Group or Graph means all staged nodes within the group or graph are spawned.
 
+## Spawning a New Process
 <pre>
-spawn [options] <i>script(s)</i> [args]
+spawn <i>script(s)</i> [args] [tags] [as <i>name</i>]
 </pre>
 
+### Args
+The arguments to the script.
 
-### Options
---attr <i>name(s)</i> 
-- Specifies the device attributes the process needs to run.
-- Examples:
-```
-spawn --attr "Camera" logger.js gpio1.log
-spawn --attr ["Camera", "Temperature"] logger.js gpio1.log
-```
+### Tags
+Tags are used to identify the devices the process can be spawned on. The process will only be spawned on devices with matching tags.
 
-> *Kumseok:* I like this idea, though I also think the `--attr` token may be redundant. Perhaps we can support something like *hashtags* or named attributes. We are essentially using this syntax to "select" nodes, similar to how we use CSS query selectors. For example:
+#### Unnamed Tags
+Unnamed tags are identified with a "#" prefix.
 
+Example:
 ```
-spawn logger.js gpio1.log #webcam
 spawn logger.js gpio1.log #webcam #temperature-sensor
-spawn logger.js gpio1.log #webcam --region=vancouver
+
 ```
 
-
-### Process Naming
-Attaching names to a processes makes creating a graph with the *connect* command easy. More than one process can fall under the same name and references to such name will refer to the list of processes with that name.
-
+#### Named Tags (TBD)
 <pre>
-spawn [options] <i>script(s)</i> [args] as <i>name</i>
+--name=<i>value</i>
 </pre>
 
 Example:
-
 ```
-spawn VideoRecorder.js as recorder
+spawn logger.js gpio1.log --region=vancouver
 ```
 
-
-### Spawning multiple processes of the same type
+### Spawning Identical Processes
 <pre>
 x * (spawn [options] <i>script(s)</i> [args] [as name])
 </pre>
@@ -74,8 +86,24 @@ x * (spawn [options] <i>script(s)</i> [args] [as name])
 Example:
 
 ```
-10 * (spawn map.js) -> 4 * (spawn reduce.js) ~> spawn reduce.js log.txt
+10 * (spawn map.js)
 ```
+
+## Spawning a Node Group or Graph
+Processes for all staged nodes within the graph or node group will be created.
+
+<pre>
+spawn <i>graph_or_group_name</i>
+</pre>
+
+
+## Node
+The *node* command has the same syntax as *spawn* and creates a staged node that can be later "spawned" to start a process in the runtime. A node must be part of a Node Group (i.e. "as *name*") or a Graph created with the *connect* command. The node will be spawned when its associated group or graph is spawned.
+
+<pre>
+node <i>script(s)</i> [args] [tags] [as <i>name</i>]
+</pre>
+
 
 ## <a name="Piping"></a> Piping
 *sender*: a process outputting data to one or more pipes
@@ -105,16 +133,16 @@ Data from all senders is sent to the receiver.
 [senders] ~> receiver
 ```
 
-### Split
+### Split (TBD)
 Data is split into a number of chunks equaling the number of receivers. Each receiver receives one of the chunks.
 
-TODO: ordering semantics?
+TODO: ordering semantics
 
 ```
 sender ~/> [receivers]
 ```
 
-### Merge
+### Merge (TBD)
 Data from all senders is merged together before being forwarded to the receiver.
 
 TODO: ordering semantics
@@ -124,7 +152,7 @@ TODO: ordering semantics
 ```
 
 
-### Pool Processing
+### Pool Processing (TBD)
 Data from each sender is sent to any one of the receivers. For now, let's assume load balancing is attempted through round robin message passing by all senders. More complex load balancing may be required.
 
 ```
@@ -138,28 +166,28 @@ All data from all senders is replicated and received by every receiver.
 [senders] ~> [receivers]
 ```
 
-### Many-to-Many: Split + Join
+### Many-to-Many: Split + Join (TBD)
 Data from each sender is split into a number of chunks equaling the number of receivers. Each sender individually splits the chunks among the receivers.
 
 ```
 [senders] ~/> [receivers]
 ```
 
-### Many-to-Many: Merge + Replication
+### Many-to-Many: Merge + Replication (TBD)
 Data from all senders is merged together, replicated, and sent to every receiver.
 
 ```
 [senders] ~*> [receivers]
 ```
 
-### Many-to-Many: Join + Pool Processing
+### Many-to-Many: Join + Pool Processing (TBD)
 Data from all senders is merged together before being forwarded to one of the receivers.
 
 ```
 [senders] -*> [receivers]
 ```
 
-### Pipe Throughput Constraints
+### Pipe Throughput Constraints (TBD)
 Ensures no more than the specified bytes per second are leaving or entering a process at a time.
 
 ```
@@ -186,23 +214,26 @@ function qos5mbs () {
 A ~>{qos5mbs} B
 ```
 
+### Creating Pipes
+Pipes can be specified between processes as they are spawned or within the list of edges argument of the *connect* command (see next section).
+
+Example:
+```
+10 * (spawn map.js) -> 4 * (spawn reduce.js) ~> spawn reduce.js log.txt
+```
 
 ## Connect
-**Question**: Is there any benefit to having the graph specified before any processes are spawned (e.g. to better distribute the graph across devices once the structure is known)? Supporting this would require more complex syntax and semantics.
-
-> *Kumseok:* I think there would be certain benefits, a major one being able to decouple the graph topology/structure from the exact processes. For example, if we can support defining a dataflow structure with variable names whose values can be assigned later, then we would be able to "plug in" actual programs into a graph at a later time.
-
-The *connect* command provides a straightforward way to create graphs. Any type of piping listed under [Piping](#Piping) is supported.
+The *connect* command provides a straightforward way to create graphs. See [Piping](#Piping) for the types of pipes available.
 
 <pre>
-connect <i>list_of_connections</i>
+connect <i>list_of_edges</i> as <i>name</i>
 </pre>
 
-For example, the following simple graph cannot be specified by strictly using spawn command:
+For example, the following simple graph cannot be specified by strictly linking spawn commands with pipe operators:
 
 ![diagram](./images/some-to-some.png)
 
-Solution:
+To solve this, we need create Node Groups that can be referenced multiple times in the list of edges:
 ```
 spawn program_A.js as "A"
 spawn program_C.js as "C"
@@ -210,23 +241,8 @@ spawn program_C.js as "C"
 connect [A ~> C, A ~> spawn program_D.js, spawn program_B.js ~> C]
 ```
 
-**Initial ideas for more flexible graph syntax/semantics:**
-
-The *node* keyword assigns the ingrediants for starting a process (script and args) to a name. I'll call these "staged processes" for now and running processes will be "spawned processes". The *spawn_connect* keyword is used to connect together any number of staged or spawned processes, and immediately spawn any staged processes. The *connect* keyword creates a graph consisting of processes and assigns it a name. One could then use *spawn* \<graph_name\> to spawn any staged processes in the graph. This would be the same as using the connect command to connect a bunch of processes, and then spawn any staged processes one-by-one.
-
-We would need to keep a map of names and the corresponding processes or the graph that fall(s) under them. A name can map to any number of staged and spawned processes. A name that maps to a graph can only map to that graph and nothing else. We could use the terminology "graphs" and "node groups".
-
-To later add more processes to the graph, spawn more processes under one of the node groups involved in the graph (e.g. "A" or "C").
-
-
+Other examples of valid syntax, except A consists of two processes in these cases:
 ```
-spawn program_A.js as "A"
-node program_A2.js log.txt as "A"
-node program_C.js as "C"
-
-spawn_connect [A ~> C, A ~> node program_D.js, node program_B.js ~> C]
-
-or
 
 spawn program_A.js as "A"
 node program_A2.js log.txt as "A"
@@ -252,13 +268,25 @@ spawn "D"
 ```
 
 ```
-// To add a few more processes to the graph sending to C and D, we can just
-// spawn more processes under the node group "A"
+// To add a few more processes to the Graph that send to C and D, we can spawn more processes
+// under the Node Group "A" since the new processes automatically inherit the group's edges.
 3 * (spawn program_A.js as "A")
 ```
 
-*Kumseok:* Instead of using the `spawn` expression here, what about a new keyword (e.g., `vertex`, `agent`)? The reason I suggest this is because the `spawn` expression would immediately start a process, while we may want to simply define an abstract "placeholder" process without immediately starting it until the graph is fully defined.
+## Spawn Connect (TBD)
+The *spawn_connect* command is identical to the *connect* command except the graph is immediately spawned so it doesn't require a name.
+<pre>
+spawn_connect <i>list_of_edges</i>
+</pre>
 
+Example:
+```
+spawn program_A.js as "A"
+node program_A2.js log.txt as "A"
+node program_C.js as "C"
+
+spawn_connect [A ~> C, A ~> node program_D.js, node program_B.js ~> C]
+```
 
 ## Other Language Elements
 These other elements have been briefly brought during discussions:
