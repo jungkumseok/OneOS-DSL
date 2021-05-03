@@ -25,7 +25,8 @@ Environment.prototype = {
     },
     doneEval: function () {
         this.verifs = [];
-        this.spawnQueue.clear();
+        this.nodeSpawnQueue.clear();
+        this.edgeSpawnQueue.clear();
     },
 };
 
@@ -49,7 +50,10 @@ function Interpreter(runtime_api, builtins) {
     this.environ.NodeGroups = {};
 
     // Queue of nodes needing to be spawned
-    this.environ.spawnQueue = new Set();
+    this.environ.nodeSpawnQueue = new Set();
+
+    // Queue of edges needing to be spawned
+    this.environ.edgeSpawnQueue = new Set();
 
     this.environ.curr_graph = null;
     this.environ.num_implicit_graphs = 0;

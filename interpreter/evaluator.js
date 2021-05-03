@@ -1,29 +1,11 @@
 const Spawner = require("./Spawner.js");
 const path = require("path");
 
-function Node(script, args, attrs) {
-    this.script = script;
-    this.args = args;
-    this.attrs = attrs;
-    this.in_edges = [];
-    this.out_edges = [];
-    this.pid = null;
-}
-
-function Edge(sender, receiver, pipe) {
-    this.sender = sender;
-    this.receiver = receiver;
-    this.pipe = pipe;
-    this.graphs = []; // Graphs the edge is a part of
-}
-
-function Graph(name) {
-    this.name = name;
-    this.nodes = new Set();
-    this.edges = [];
-}
-
-// TODO: move these to the environment?
+const graphTypes = require("./GraphTypes.js");
+const Node = graphTypes.Node;
+const Edge = graphTypes.Edge;
+const Graph = graphTypes.Graph;
+const NodeGroup = graphTypes.NodeGroup;
 
 function is_node_group(env, name) {
     return env.NodeGroups[name] != undefined;
@@ -38,38 +20,55 @@ function is_piping_op(exp) {
     return exp.type == "op" && piping_ops.includes(" " + exp.operator + " ");
 }
 
-function get_edge(sender, receiver) {
+function get_edge(sender, receiver, pipe) {
     for (var edge of sender.out_edges) {
-        if (edge.receiver == receiver) {
+        if (edge.receiver == receiver && edge.pipe == pipe) {
             return edge;
         }
     }
     return null;
 }
 
-function spawn_node_group(env, name) {
+function spawn_node_group(env, group) {
     // Spawn each node that has not been spawned
-    for (var nd of env.NodeGroups[name]) {
+    for (var nd of group.nodes) {
         if (nd.pid == null) {
-            env.spawnQueue.add(nd);
+            env.nodeSpawnQueue.add(nd);
         }
     }
 }
 
-function spawn_graph(env, name) {
-    // Spawn each node that has not been spawned
-    for (var nd of env.Graphs[name].nodes) {
-        if (nd.pid == null) {
-            env.spawnQueue.add(nd);
+
+function spawn_graph(env, graph) {
+    /* Spawns staged nodes in the graph. Pipes are automatically created by the Spawner between
+     * edges consisting of at least one staged node when the node is spawned. */
+    for (var edge of graph.edges) {
+        var senders = edge.sender instanceof NodeGroup ? edge.sender.nodes : [edge.sender]
+        var receivers = edge.receiver instanceof NodeGroup ? edge.receiver.nodes : [edge.receiver]
+        for (var sender of senders) {
+            for (var receiver of receivers) {
+                // Explictly create edges if both nodes are spawned.
+                if (sender.pid && receiver.pid) {
+                    env.edgeSpawnQueue.add(new Edge(sender, receiver));
+                } else {
+                    if (sender.pid == null) {
+                        env.nodeSpawnQueue.add(sender);
+                    }
+                    if (receiver.pid == null) {
+                        env.nodeSpawnQueue.add(receiver);
+                    }
+                }
+            }
         }
     }
 }
 
 function add_node_to_group(env, name, nd) {
     if (env.NodeGroups[name] == undefined) {
-        env.NodeGroups[name] = [];
+        env.NodeGroups[name] = new NodeGroup(name);
     }
-    env.NodeGroups[name].push(nd);
+    nd.group = env.NodeGroups[name];
+    env.NodeGroups[name].nodes.push(nd);
 }
 
 function get_node_group(env, name) {
@@ -121,22 +120,24 @@ function create_node(env, exp, spawn) {
     }
 
     if (spawn == true) {
-        env.spawnQueue.add(nd);
+        env.nodeSpawnQueue.add(nd);
     }
 
     return nd;
 }
 
-function get_nodes(env, nested_node_arr) {
+function get_nodes_and_groups(env, nested_arr) {
     var node_arr = [];
-    for (var i = 0; i < nested_node_arr.length; i++) {
-        if (Array.isArray(nested_node_arr[i])) {
-            node_arr = node_arr.concat(get_nodes(env, nested_node_arr[i]));
+    for (var i = 0; i < nested_arr.length; i++) {
+        if (Array.isArray(nested_arr[i])) {
+            node_arr = node_arr.concat(
+                get_nodes_and_groups(env, nested_arr[i])
+            );
         } else {
-            var node = nested_node_arr[i];
+            var node = nested_arr[i];
             if (typeof node == "string") {
                 // Get the corresponding node group
-                node_arr = node_arr.concat(get_node_group(env, node));
+                node_arr.push(get_node_group(env, node));
             } else {
                 node_arr.push(node);
             }
@@ -146,30 +147,18 @@ function get_nodes(env, nested_node_arr) {
 }
 
 function create_edges(env, senders, receivers, op) {
-    if (!Array.isArray(senders)) senders = [senders];
-    if (!Array.isArray(receivers)) receivers = [receivers];
-
-    /* Note: senders and receivers arrays may contain nested arrays
-    and names of node groups rather than the actual nodes */
-    new_senders = get_nodes(env, senders);
-    new_receivers = get_nodes(env, receivers);
-
-    for (var sender of new_senders) {
-        for (var receiver of new_receivers) {
-            var edge = get_edge(sender, receiver);
+    for (var sender of senders) {
+        for (var receiver of receivers) {
+            var edge = get_edge(sender, receiver, op);
             if (edge == null) {
                 edge = new Edge(sender, receiver, op);
                 sender.out_edges.push(edge);
                 receiver.in_edges.push(edge);
             }
             edge.graphs.push(env.curr_graph.name);
-            env.curr_graph.edges.push(edge); // TODO: may only need to have a set of nodes in graph since we're only spawning a graph right now
-            env.curr_graph.nodes.add(sender);
-            env.curr_graph.nodes.add(receiver);
+            env.curr_graph.edges.push(edge);
         }
     }
-
-    return new_receivers;
 }
 
 async function create_implicit_graph(op_exp, env) {
@@ -180,7 +169,7 @@ async function create_implicit_graph(op_exp, env) {
     env.curr_graph = null;
 
     env.Graphs[env.num_implicit_graphs] = graph;
-    spawn_graph(env, env.num_implicit_graphs++);
+    spawn_graph(env, graph);
 
     return graph;
 }
@@ -220,12 +209,16 @@ async function evaluate(exp, env) {
 
             // Wait until async verifications resolve
             await Promise.all(env.verifs)
-                .then(() => new Spawner(env).spawn_nodes(env.spawnQueue))
-                .catch((err) => {
-                    env.doneEval();
-                    throw err;
+                .then(() => {
+                    let spawner = new Spawner(env);
+                    return Promise.all([
+                        spawner.spawn_nodes(env.nodeSpawnQueue),
+                        spawner.create_pipes(env.edgeSpawnQueue),
+                    ]);
+                })
+                .finally(() => {
+                    return env.doneEval();
                 });
-            env.doneEval();
 
             return res;
 
@@ -244,14 +237,15 @@ async function evaluate_cmd(exp, env) {
             // If first arg is a string, then we are spawning an existing node group or graph
             var first_arg = exp.args[0];
             if (first_arg.type == "str") {
-                // Get the identifier
-                if (is_node_group(env, first_arg.value)) {
-                    spawn_node_group(env, first_arg.value);
-                } else if (is_graph(env, first_arg.value)) {
-                    spawn_graph(env, first_arg.value);
+                // TODO: prevent a graph and node group from having the same name
+                var id = first_arg.value;
+                if (is_node_group(env, id)) {
+                    spawn_node_group(env, env.NodeGroups[id]);
+                } else if (is_graph(env, id)) {
+                    spawn_graph(env, env.Graphs[id]);
                 } else {
                     throw new Error(
-                        `\"${first_arg.value}\" does not correspond to a node group or graph`
+                        `\"${id}\" does not correspond to a node group or graph`
                     );
                 }
                 return;
@@ -309,8 +303,17 @@ async function apply_op(env, op, left_exp, right_exp) {
         case "~/>":
             var senders = await evaluate(left_exp, env);
             var receivers = await evaluate(right_exp, env);
-            parsed_receivers = create_edges(env, senders, receivers, op);
-            return parsed_receivers; // Return receivers so we can chain pipes
+
+            /* Note: Depending on the evaluation result, senders and receivers can contain nested arrays
+            of Nodes and IDs of NodeGroups or they may be a single Node or NodeGroup ID. We want to flatten
+            them into a 1D array of Nodes and NodeGroups */
+            if (!Array.isArray(senders)) senders = [senders];
+            if (!Array.isArray(receivers)) receivers = [receivers];
+            senders = get_nodes_and_groups(env, senders);
+            receivers = get_nodes_and_groups(env, receivers);
+
+            create_edges(env, senders, receivers, op);
+            return receivers; // Return receivers so we can chain pipes
     }
     throw new Error("Can't apply operator " + op);
 }
