@@ -37,12 +37,17 @@ Lists are supported using JavaScript-style syntax:
 [item1, item2, item3, ...]
 ```
 
-## Repeating Commands
-To easily execute the same command *x* number of times, a multiplier may be specified. This is the most obviously useful for spawning multiple processes of the same type.
+## Repeating Statements
+To easily execute the same statement *x* number of times, a multiplier may be specified. This is the most obviously useful for spawning multiple processes of the same type.
 
 <pre>
-x * (cmd)
+x * (statement)
 </pre>
+
+Example:
+```
+3 * (spawn BlobRead.js ~> spawn Sink.js)
+```
 
 > Note: This syntax needs to be revised to disambiguate arithmetic ops if they are added to the DSL.
 
