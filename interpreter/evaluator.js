@@ -1,11 +1,11 @@
 const Spawner = require("./spawner.js");
 const path = require("path");
 
-const graphTypes = require("./structures.js");
-const Node = graphTypes.Node;
-const Edge = graphTypes.Edge;
-const Graph = graphTypes.Graph;
-const NodeGroup = graphTypes.NodeGroup;
+const structures = require("./structures.js");
+const Node = structures.Node;
+const Edge = structures.Edge;
+const Graph = structures.Graph;
+const NodeGroup = structures.NodeGroup;
 
 function is_node_group(env, name) {
     return env.NodeGroups[name] != undefined;
@@ -16,8 +16,8 @@ function is_graph(env, name) {
 }
 
 function is_piping_op(exp) {
-    var piping_ops = " -> -*> ~> ~/> ~*> ";
-    return exp.type == "op" && piping_ops.includes(" " + exp.operator + " ");
+    var pipes = " -> -*> ~> ~/> ~*> ";
+    return exp.type == "op" && pipes.includes(" " + exp.operator + " ");
 }
 
 function get_edge(sender, receiver, pipe) {
@@ -29,6 +29,22 @@ function get_edge(sender, receiver, pipe) {
     return null;
 }
 
+function add_node_to_group(env, name, nd) {
+    if (env.NodeGroups[name] == undefined) {
+        env.NodeGroups[name] = new NodeGroup(name);
+    }
+    nd.group = env.NodeGroups[name];
+    env.NodeGroups[name].nodes.push(nd);
+}
+
+function get_node_group(env, name) {
+    var group = env.NodeGroups[name];
+    if (group == undefined) {
+        throw new Error(`No node group named \"${name}\"`);
+    }
+    return group;
+}
+
 function spawn_node_group(env, group) {
     // Spawn each node that has not been spawned
     for (var nd of group.nodes) {
@@ -38,9 +54,8 @@ function spawn_node_group(env, group) {
     }
 }
 
-
 function spawn_graph(env, graph) {
-    /* Spawns staged nodes in the graph. Pipes are automatically created by the Spawner between
+    /* Spawns any staged nodes in the graph. Pipes are automatically created by the Spawner between
      * edges consisting of at least one staged node when the node is spawned. */
     for (var edge of graph.edges) {
         var senders = edge.sender instanceof NodeGroup ? edge.sender.nodes : [edge.sender]
@@ -63,23 +78,7 @@ function spawn_graph(env, graph) {
     }
 }
 
-function add_node_to_group(env, name, nd) {
-    if (env.NodeGroups[name] == undefined) {
-        env.NodeGroups[name] = new NodeGroup(name);
-    }
-    nd.group = env.NodeGroups[name];
-    env.NodeGroups[name].nodes.push(nd);
-}
-
-function get_node_group(env, name) {
-    var group = env.NodeGroups[name];
-    if (group == undefined) {
-        throw new Error(`No node group named \"${name}\"`);
-    }
-    return group;
-}
-
-function verify_node_arg(env, cmd, first_arg) {
+function verify_script_exists(env, cmd, first_arg) {
     var arg_val = first_arg.value;
     if (first_arg.type == "num") {
         throw new Error(
@@ -99,13 +98,12 @@ function verify_node_arg(env, cmd, first_arg) {
 }
 
 function get_args(args_arr) {
-    // TODO: parse command options (e.g. --help or -h)?
     return args_arr.map((arg) => arg.value);
 }
 
 function create_node(env, exp, spawn) {
     var first_arg = exp.args[0];
-    verify_node_arg(env, cmd, first_arg);
+    verify_script_exists(env, cmd, first_arg);
 
     var file_name = first_arg.value;
     var args = get_args(exp.args.slice(1));
@@ -114,6 +112,8 @@ function create_node(env, exp, spawn) {
     if (exp.group) {
         add_node_to_group(env, exp.group, nd);
     } else if (spawn == false && !env.curr_graph) {
+        // TODO: this error should still be thrown if it's defined within an implicit graph since they user won't
+        // know the implicit graph's ID and can't spawn it
         throw new Error(
             "A staged node must be assigned to a node group or be defined within a graph"
         );
@@ -126,6 +126,7 @@ function create_node(env, exp, spawn) {
     return nd;
 }
 
+/* Parses nested lists containing Nodes and Node Groups string IDs into a 1D list of Nodes and Node Groups */
 function get_nodes_and_groups(env, nested_arr) {
     var node_arr = [];
     for (var i = 0; i < nested_arr.length; i++) {
@@ -155,26 +156,25 @@ function create_edges(env, senders, receivers, op) {
                 sender.out_edges.push(edge);
                 receiver.in_edges.push(edge);
             }
-            edge.graphs.push(env.curr_graph.name);
             env.curr_graph.edges.push(edge);
         }
     }
 }
 
 async function create_implicit_graph(op_exp, env) {
-    var edges = [];
     var graph = new Graph(env.num_implicit_graphs);
     env.curr_graph = graph;
-    edges.push(await apply_op(env, op_exp.operator, op_exp.left, op_exp.right));
+    await apply_op(env, op_exp.operator, op_exp.left, op_exp.right);
     env.curr_graph = null;
 
-    env.Graphs[env.num_implicit_graphs] = graph;
+    env.Graphs[env.num_implicit_graphs++] = graph;
     spawn_graph(env, graph);
 
     return graph;
 }
 
 async function evaluate(exp, env) {
+    // console.log(exp)
     switch (exp.type) {
         case "num":
         case "str":
@@ -185,7 +185,7 @@ async function evaluate(exp, env) {
             return await evaluate_cmd(exp, env);
 
         case "op":
-            // A graph is implicitly created when a piping is used outside of the connect command edge list
+            // A graph is implicitly created when piping is used outside of the connect command edge list
             // e.g. 10 * (spawn map.js) -> 4 * (spawn reduce.js #camera) ~> spawn reduce.js log.txt
             if (is_piping_op(exp) && !env.curr_graph) {
                 return await create_implicit_graph(exp, env);
@@ -262,7 +262,6 @@ async function evaluate_cmd(exp, env) {
             }
 
             var graph = new Graph(exp.graph);
-
             env.curr_graph = graph;
             await evaluate(exp.args[0], env);
             env.curr_graph = null;
@@ -276,6 +275,7 @@ async function evaluate_cmd(exp, env) {
             return;
 
         default:
+            // Check the environment for the command
             return await env
                 .get(exp.cmd)
                 .then((res) => res(get_args(exp.args), env));

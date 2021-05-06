@@ -1,9 +1,7 @@
 const path = require("path");
-const graphTypes = require("./structures.js");
-const Node = graphTypes.Node;
-const Edge = graphTypes.Edge;
-const Graph = graphTypes.Graph;
-const NodeGroup = graphTypes.NodeGroup;
+const structures = require("./structures.js");
+const Edge = structures.Edge;
+const NodeGroup = structures.NodeGroup;
 
 // TODO: make cache for already spawned edges in spawn_nodes
 
@@ -26,7 +24,7 @@ Spawner.prototype.spawn_nodes = async function (nodes) {
     for (let node of nodes) {
         spawningNodes.push(
             this.env.api
-                .spawn(path.resolve(this.env.cwd, node.script))
+                .spawn(path.resolve(this.env.cwd, node.script), node.args, node.attrs)
                 .then((pid) => {
                     node.pid = pid;
                 })

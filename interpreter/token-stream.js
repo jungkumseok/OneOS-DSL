@@ -1,13 +1,14 @@
 function TokenStream(input) {
-    var current = null;
+    var curr_tok = null;
+    var next_tok = null;
 
-    /* ls ps cd pwd cat */
-    var cmds = " spawn connect node ";
+    var cmds = " spawn node connect spawn_connect ";
     var keywords = " as ";
 
     return {
         next: next,
         peek: peek,
+        peek2: peek2,
         eof: eof,
         croak: input.croak,
     };
@@ -120,7 +121,7 @@ function TokenStream(input) {
         input.next();
         var str = read_while(is_word);
         if (str == "") {
-            input.croak("# must be followed by attribute name");
+            input.croak("# must be followed by the attribute name");
         }
 
         return {
@@ -135,8 +136,7 @@ function TokenStream(input) {
         if (input.eof()) return null;
         var ch = input.peek();
 
-        // TODO: also suport single quotes?
-        if (ch == '"') {
+        if (ch == '"' || ch == '"') {
             return read_string();
         }
 
@@ -176,12 +176,18 @@ function TokenStream(input) {
     }
 
     function peek() {
-        return current || (current = read_next());
+        return curr_tok || (curr_tok = read_next());
+    }
+
+    function peek2() {
+        if (!curr_tok) curr_tok = read_next();
+        return next_tok || (next_tok = read_next()) 
     }
 
     function next() {
-        var tok = current;
-        current = null;
+        var tok = curr_tok;
+        curr_tok = next_tok;
+        next_tok = null;
         return tok || read_next();
     }
 

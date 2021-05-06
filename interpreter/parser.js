@@ -2,12 +2,11 @@ function parse(input) {
     var PRECEDENCE = {
         "~>": 1,
         "->": 1,
+        "-*>": 1,
         "~*>": 1,
         "~/>": 1,
         "*": 2,
     };
-
-    return parse_toplevel();
 
     function is_punc(ch) {
         var tok = input.peek();
@@ -22,6 +21,18 @@ function parse(input) {
     function is_op(op) {
         var tok = input.peek();
         return tok && tok.type == "op" && (!op || tok.value == op) && tok;
+    }
+
+    function is_pipe_op() {
+        var tok = input.peek();
+        var pipes = " -> -*> ~> ~/> ~*> ";
+        return tok && tok.type == "op" && pipes.includes(" " + tok.value + " ");
+    }
+
+    function next_is_pipe_op() {
+        var tok = input.peek2();
+        var pipes = " -> -*> ~> ~/> ~*> ";
+        return tok && tok.type == "op" && pipes.includes(" " + tok.value + " ");
     }
 
     function is_new_line() {
@@ -92,16 +103,17 @@ function parse(input) {
         input.croak("Unexpected token: " + JSON.stringify(input.peek()));
     }
 
-    function maybe_op(left, my_prec, expect_id) {
+    function maybe_op(left, my_prec) {
         var tok = is_op();
 
         if (tok) {
             var his_prec = PRECEDENCE[tok.value];
             if (his_prec > my_prec) {
+                var is_pipe = is_pipe_op();
                 input.next();
 
                 /* Allow piping operations to span multiple lines */
-                if (tok && tok.value != "*") {
+                if (is_pipe) {
                     skip_while(is_new_line);
                 }
 
@@ -111,13 +123,11 @@ function parse(input) {
                         operator: tok.value,
                         left: left,
                         right: maybe_op(
-                            parse_atom(expect_id),
-                            his_prec,
-                            expect_id
+                            parse_atom(is_pipe),
+                            his_prec
                         ),
                     },
-                    my_prec,
-                    expect_id
+                    my_prec
                 );
             }
         }
@@ -148,9 +158,7 @@ function parse(input) {
 
         // Connect expects a single list as the argument
         if (is_list()) {
-            // Words in the list that are not cmds are considered to be
-            // identifiers (i.e. the names) of node groups
-            parsedList = parse_list(true);
+            parsedList = parse_list();
         } else {
             input.croak("Expecting list as argument to connect command.");
         }
@@ -213,6 +221,7 @@ function parse(input) {
     }
 
     function parse_args() {
+        // TODO: parse command options (e.g. --help or -h)?
         var args = [];
         while (is_valid_arg()) {
             args.push(input.next());
@@ -233,9 +242,9 @@ function parse(input) {
         return name;
     }
 
-    function parse_list(expect_id) {
+    function parse_list() {
         var parsed_elems = delimited("[", "]", ",", () =>
-            parse_expression(expect_id)
+            parse_expression()
         );
         return {
             type: "list",
@@ -243,17 +252,17 @@ function parse(input) {
         };
     }
 
-    function parse_atom(expect_id, new_line) {
+    function parse_atom(expect_id, new_exp) {
         // console.log(input.peek());
         if (is_punc("(")) {
             input.next();
-            var exp = parse_expression(expect_id);
+            var exp = parse_expression();
             skip_punc(")");
             return exp;
         }
 
         if (is_list()) {
-            return parse_list(expect_id);
+            return parse_list();
         }
 
         if (is_cmd("connect")) {
@@ -283,8 +292,8 @@ function parse(input) {
             return tok;
         }
 
-        // If this is the first word after a new line, assume we encountered an uknown command
-        if (new_line && tok.type == "w") {
+        // If this is the first word of a new expression, assume we encountered an unknown command
+        if (new_exp && tok.type == "w") {
             return parse_cmd();
         }
 
@@ -293,22 +302,30 @@ function parse(input) {
 
     function parse_toplevel() {
         var prog = [];
-        var new_line = true;
+        var new_exp = true;
         while (!input.eof()) {
             if (is_new_line()) {
                 input.next();
-                new_line = true;
+                new_exp = true;
                 continue;
             }
-            prog.push(parse_expression(false, new_line));
-            new_line = false;
+            prog.push(parse_expression(new_exp));
+            new_exp = false;
         }
         return { type: "prog", prog: prog };
     }
 
-    function parse_expression(expect_id, new_line) {
-        return maybe_op(parse_atom(expect_id, new_line), 0, expect_id);
+    function parse_expression(new_exp) {
+        // Unknown words are assumed to be identifiers (i.e. names) of node groups
+        // when they are on either side of a piping operator
+        var expect_id = false;
+        if (next_is_pipe_op()) {
+            expect_id = true;
+        }
+        return maybe_op(parse_atom(expect_id, new_exp), 0);
     }
+
+    return parse_toplevel();
 }
 
 module.exports = parse;

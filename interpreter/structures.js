@@ -12,12 +12,10 @@ function Edge(sender, receiver, pipe) {
     this.sender = sender;
     this.receiver = receiver;
     this.pipe = pipe;
-    this.graphs = []; // Graphs the edge is a part of (TODO: is this necessary?)
 }
 
 function Graph(name) {
     this.name = name;
-    // this.nodes = new Set();
     this.edges = [];
 }
 
