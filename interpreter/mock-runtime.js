@@ -51,6 +51,8 @@ const SampleDirectory = {
 				'Join.js': '',
 				'Annotate.js': '',
 				'CsvToSenML.js': '',
+				'MQTTPub.js': '',
+				'AzureTableInsert.js': '',
 				'Sink.js': '',
 			},
 			'bench-stats': {

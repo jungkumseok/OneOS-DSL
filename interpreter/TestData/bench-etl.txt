@@ -2,4 +2,5 @@ cd /ubc/bench-etl
 
 spawn Source.js ~> spawn SenMLParse.js ~> spawn RangeFilter.js ~>
 spawn BloomFilter.js ~> spawn Interpolate.js ~> spawn Join.js ~>
-spawn Annotate.js ~> spawn CsvToSenML.js ~> spawn Sink.js
+spawn Annotate.js ~> [spawn CsvToSenML.js ~> spawn MQTTPub.js, spawn AzureTableInsert.js] ~>
+spawn Sink.js

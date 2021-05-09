@@ -293,7 +293,7 @@ spawn program_A.js as "A"
 node program_A2.js log.txt as "A"
 node program_C.js as "C"
 node program_D.js as "D"
-node program_B as "B"
+node program_B.js as "B"
 
 connect [A ~> C, A ~> D, B ~> C] as "graph_A"
 

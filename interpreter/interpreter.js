@@ -56,7 +56,6 @@ function Interpreter(runtime_api, builtins) {
     this.environ.edgeSpawnQueue = new Set();
 
     this.environ.curr_graph = null;
-    this.environ.num_implicit_graphs = 0;
 }
 
 // All functions should return a Promise
@@ -75,6 +74,7 @@ Interpreter.BUILTINS = {
         var cd_path = args[0];
         if (!cd_path) {
             env.cwd = env.home;
+            return Promise.resolve();
         }
         if (typeof cd_path != "string") {
             throw new Error("cd - invalid path: ", cd_path);
@@ -115,6 +115,8 @@ Interpreter.prototype.eval = async function (str) {
     return this.evaluate(this.compile(str), this.environ);
 };
 
+// TODO: updated print functions now that sender and receiver can be Node Groups
+
 Interpreter.prototype.print_graph = function (graph) {
     for (var edge of graph.edges) {
         console.log(
@@ -136,7 +138,7 @@ Interpreter.prototype.print_graph = function (graph) {
 };
 
 Interpreter.prototype.print_node_group = function (group) {
-    for (var node of group) {
+    for (var node of group.nodes) {
         console.log(
             node.script +
                 (node.args.length > 0 ? " " : "") +

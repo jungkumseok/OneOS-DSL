@@ -162,14 +162,12 @@ function create_edges(env, senders, receivers, op) {
 }
 
 async function create_implicit_graph(op_exp, env) {
-    var graph = new Graph(env.num_implicit_graphs);
+    var graph = new Graph();
     env.curr_graph = graph;
     await apply_op(env, op_exp.operator, op_exp.left, op_exp.right);
     env.curr_graph = null;
 
-    env.Graphs[env.num_implicit_graphs++] = graph;
-    spawn_graph(env, graph);
-
+    /* NOTE: Currently, there is no need to save the graph in the environment with the named graphs */
     return graph;
 }
 
