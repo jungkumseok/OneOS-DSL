@@ -158,7 +158,7 @@ function parse(input) {
 
         // Connect expects a single list as the argument
         if (is_list()) {
-            parsedList = parse_list();
+            parsedList = parse_list(true);
         } else {
             input.croak("Expecting list as argument to connect command.");
         }
@@ -242,9 +242,9 @@ function parse(input) {
         return name;
     }
 
-    function parse_list() {
+    function parse_list(expect_id) {
         var parsed_elems = delimited("[", "]", ",", () =>
-            parse_expression()
+            parse_expression(expect_id)
         );
         return {
             type: "list",
@@ -253,16 +253,15 @@ function parse(input) {
     }
 
     function parse_atom(expect_id, new_exp) {
-        // console.log(input.peek());
         if (is_punc("(")) {
             input.next();
-            var exp = parse_expression();
+            var exp = parse_expression(expect_id);
             skip_punc(")");
             return exp;
         }
 
         if (is_list()) {
-            return parse_list();
+            return parse_list(expect_id);
         }
 
         if (is_cmd("connect")) {
@@ -309,16 +308,15 @@ function parse(input) {
                 new_exp = true;
                 continue;
             }
-            prog.push(parse_expression(new_exp));
+            prog.push(parse_expression(false, new_exp));
             new_exp = false;
         }
         return { type: "prog", prog: prog };
     }
 
-    function parse_expression(new_exp) {
+    function parse_expression(expect_id, new_exp) {
         // Unknown words are assumed to be identifiers (i.e. names) of node groups
         // when they are on either side of a piping operator
-        var expect_id = false;
         if (next_is_pipe_op()) {
             expect_id = true;
         }
