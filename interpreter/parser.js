@@ -122,10 +122,7 @@ function parse(input) {
                         type: "op",
                         operator: tok.value,
                         left: left,
-                        right: maybe_op(
-                            parse_atom(is_pipe),
-                            his_prec
-                        ),
+                        right: maybe_op(parse_atom(is_pipe), his_prec),
                     },
                     my_prec
                 );
@@ -175,6 +172,23 @@ function parse(input) {
             cmd: "connect",
             args: [parsedList],
             graph: name,
+        };
+    }
+
+    function parse_spawn_connect_cmd() {
+        skip_cmd("spawn_connect");
+
+        // Connect expects a single list as the argument
+        if (is_list()) {
+            parsedList = parse_list(true);
+        } else {
+            input.croak("Expecting list as argument to spawn_connect command.");
+        }
+
+        return {
+            type: "cmd",
+            cmd: "spawn_connect",
+            args: [parsedList],
         };
     }
 
@@ -266,6 +280,10 @@ function parse(input) {
 
         if (is_cmd("connect")) {
             return parse_connect_cmd();
+        }
+
+        if (is_cmd("spawn_connect")) {
+            return parse_spawn_connect_cmd();
         }
 
         if (is_cmd("spawn") || is_cmd("node")) {

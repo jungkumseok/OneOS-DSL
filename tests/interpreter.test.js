@@ -5,6 +5,9 @@ const windows = process.platform === "win32";
 
 // Note: this test suit has only been tried on Windows
 
+// TODO: verify that the pipes and processes are correct (currently we only check
+// if the expected numbers are created)
+
 runNewInterpreter = async (input, testPath) => {
     let runtime = new MockRuntime();
     let interpreter = new Interpreter(runtime, null);
@@ -101,6 +104,20 @@ test("Creating and spawning a named graph with connect command", async () => {
     expect((await runtime.listPipes()).length).toBe(5);
 });
 
+test("Creating and spawning a named graph with spawn_connect command", async () => {
+    let res = await runNewInterpreter(
+        getInputStr([
+            'spawn program_A.js as "A"',
+            'node program_A2.js log.txt as "A"',
+            'node program_C.js as "C"',
+            'spawn_connect [A ~> C, A ~> node program_D.js, node program_B.js as "B" ~> C]',
+        ])
+    );
+    let runtime = res[0];
+    expect((await runtime.listProcesses()).length).toBe(5);
+    expect((await runtime.listPipes()).length).toBe(5);
+});
+
 test("Creating an unnamed graph with spawn commands", async () => {
     let res = await runNewInterpreter(
         getInputStr(["[spawn map.js, spawn map.js] ~> spawn reduce.js"])
@@ -186,7 +203,6 @@ test("Bench PRED", async () => {
         testPath
     );
     let runtime = res[0];
-    console.log(await runtime.listPipes());
     expect((await runtime.listProcesses()).length).toBe(14);
     expect((await runtime.listPipes()).length).toBe(24);
 });
@@ -205,7 +221,6 @@ test("Bench ETL", async () => {
         testPath
     );
     let runtime = res[0];
-    console.log(await runtime.listPipes());
     expect((await runtime.listProcesses()).length).toBe(11);
     expect((await runtime.listPipes()).length).toBe(11);
 });
@@ -227,7 +242,6 @@ test("Bench STATS", async () => {
         testPath
     );
     let runtime = res[0];
-    console.log(await runtime.listPipes());
     expect((await runtime.listProcesses()).length).toBe(8);
     expect((await runtime.listPipes()).length).toBe(9);
 });
@@ -248,7 +262,6 @@ test("Bench TRAIN", async () => {
         testPath
     );
     let runtime = res[0];
-    console.log(await runtime.listPipes());
     expect((await runtime.listProcesses()).length).toBe(8);
     expect((await runtime.listPipes()).length).toBe(8);
 });
@@ -273,7 +286,6 @@ test("Bench Surveillance", async () => {
         testPath
     );
     let runtime = res[0];
-    console.log(await runtime.listPipes());
     expect((await runtime.listProcesses()).length).toBe(5);
     expect((await runtime.listPipes()).length).toBe(5);
 });

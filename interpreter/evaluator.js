@@ -161,6 +161,14 @@ function create_edges(env, senders, receivers, op) {
     }
 }
 
+async function create_graph(env, edge_list, name) {
+    var graph = new Graph(name);
+    env.curr_graph = graph;
+    await evaluate(edge_list, env);
+    env.curr_graph = null;
+    return graph
+}
+
 async function create_implicit_graph(op_exp, env) {
     var graph = new Graph();
     env.curr_graph = graph;
@@ -258,19 +266,15 @@ async function evaluate_cmd(exp, env) {
             if (is_graph(env, graph_name)) {
                 throw new Error(`Graph \"${graph_name}\" already exists`);
             }
-
-            var graph = new Graph(exp.graph);
-            env.curr_graph = graph;
-            await evaluate(exp.args[0], env);
-            env.curr_graph = null;
-
+            var graph = await create_graph(env, exp.args[0], graph_name)
             env.Graphs[graph_name] = graph;
             return graph;
 
         case "spawn_connect":
-            // Can create an unamed graph (no, automatically assign a name) Graph1
-            console.log("spawn_connect cmd not yet supported");
-            return;
+            // Create an unnamed graph
+            var graph = await create_graph(env, exp.args[0]);
+            spawn_graph(env, graph);
+            return graph;
 
         default:
             // Check the environment for the command

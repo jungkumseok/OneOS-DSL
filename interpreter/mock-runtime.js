@@ -301,6 +301,7 @@ class MockRuntime {
 	}
 
 	/* starts a new process */
+	// TODO: only spawn on devices that have all the matching tags
 	async spawn (agentAbsPath, args, ...tags){
 		if (typeof agentAbsPath === 'string'){
 			let tokens = windows ? agentAbsPath.split('\\') : agentAbsPath.split('/');

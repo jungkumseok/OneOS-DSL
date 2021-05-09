@@ -309,7 +309,7 @@ spawn "D"
 3 * (spawn program_A.js as "A")
 ```
 
-## Spawn Connect (TBD)
+## Spawn Connect
 The *spawn_connect* command is identical to the *connect* command except the graph is immediately spawned so it doesn't require a name.
 <pre>
 spawn_connect <i>list_of_edges</i>
