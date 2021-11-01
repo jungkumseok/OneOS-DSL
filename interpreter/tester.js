@@ -3,7 +3,7 @@ const Interpreter = require("./interpreter.js");
 
 const fs = require("fs");
 const input = fs
-    .readFileSync("./interpreter/TestData/bench-pred.txt")
+    .readFileSync("./interpreter/TestData/bench-surveillance.txt")
     .toString("utf-8");
 
 // var inputStream = InputStream(input);
@@ -33,23 +33,16 @@ const input = fs
 (async () => {
     var interpreter = new Interpreter(new MockRuntime());
     var AST = interpreter.compile(input);
-    // console.log(AST.prog[5].args[0].elems[0])
-    // console.log(AST.prog[5].args[0].elems[0].left)
-
-    // console.log(AST.prog[0])
 
     await interpreter.evaluate(AST, interpreter.environ);
 
     console.log("DONE EVALUATING");
 
-    // console.log("Graphs:");
-    // console.log(interpreter.environ.Graphs);
+    console.log("Graphs:");
+    console.log(interpreter.environ.Graphs);
 
-    // console.log("Node Groups:");
-    // console.log(interpreter.environ.NodeGroups);
-
-    // console.log("Spawn queue:");
-    // console.log(interpreter.environ.spawnQueue);
+    console.log("Node Groups:");
+    console.log(interpreter.environ.NodeGroups);
 
     // console.log("\nGraphs:");
     // for (var graph_name in interpreter.environ.Graphs) {
@@ -57,9 +50,9 @@ const input = fs
     //     interpreter.print_graph(interpreter.environ.Graphs[graph_name]);
     // }
 
-    // console.log("\nNode Groups:");
-    // for (var name in interpreter.environ.NodeGroups) {
-    //     console.log(`\n"${name}":`);
-    //     interpreter.print_node_group(interpreter.environ.NodeGroups[name]);
-    // }
+    console.log("\nNode Groups:");
+    for (var name in interpreter.environ.NodeGroups) {
+        console.log(`\n"${name}":`);
+        interpreter.print_node_group(interpreter.environ.NodeGroups[name]);
+    }
 })();

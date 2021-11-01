@@ -51,6 +51,8 @@ const SampleDirectory = {
 				'Join.js': '',
 				'Annotate.js': '',
 				'CsvToSenML.js': '',
+				'MQTTPub.js': '',
+				'AzureTableInsert.js': '',
 				'Sink.js': '',
 			},
 			'bench-stats': {
@@ -299,6 +301,7 @@ class MockRuntime {
 	}
 
 	/* starts a new process */
+	// TODO: only spawn on devices that have all the matching tags
 	async spawn (agentAbsPath, args, ...tags){
 		if (typeof agentAbsPath === 'string'){
 			let tokens = windows ? agentAbsPath.split('\\') : agentAbsPath.split('/');

@@ -102,7 +102,8 @@ cd /ubc/bench-etl
 
 spawn Source.js ~> spawn SenMLParse.js ~> spawn RangeFilter.js ~>
 spawn BloomFilter.js ~> spawn Interpolate.js ~> spawn Join.js ~>
-spawn Annotate.js ~> spawn CsvToSenML.js ~> spawn Sink.js
+spawn Annotate.js ~> [spawn CsvToSenML.js ~> spawn MQTTPub.js, spawn AzureTableInsert.js] ~>
+spawn Sink.js
 ```
 
 ### Resulting Graph
@@ -114,8 +115,11 @@ RangeFilter.js ~> BloomFilter.js
 BloomFilter.js ~> Interpolate.js
 Interpolate.js ~> Join.js
 Join.js ~> Annotate.js
-Annotate.js ~> CsvToSenML.js
-CsvToSenML.js ~> Sink.js
+CsvToSenML.js ~> MQTTPub.js
+Annotate.js ~> MQTTPub.js
+Annotate.js ~> AzureTableInsert.js
+MQTTPub.js ~> Sink.js
+AzureTableInsert.js ~> Sink.js
 ```
 
 ## RIoTBench-STATS
@@ -228,4 +232,17 @@ spawn VideoStreamer.js ~>
 
 ### Resulting Graph
 
+```
+VideoStreamer.js ~> MailSender.js
+VideoStreamer.js ~> VideoRecorder.js
+VideoStreamer.js ~> VideoViewer.js
+MotionDetector.js ~> MailSender.js
+MotionDetector.js ~> VideoRecorder.js
+```
+
 ### Resulting Node Groups
+
+```
+"recorder":
+VideoRecorder.js
+```

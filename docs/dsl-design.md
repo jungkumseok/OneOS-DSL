@@ -37,12 +37,17 @@ Lists are supported using JavaScript-style syntax:
 [item1, item2, item3, ...]
 ```
 
-## Repeating Commands
-To easily execute the same command *x* number of times, a multiplier may be specified. This is the most obviously useful for spawning multiple processes of the same type.
+## Repeating Statements
+To easily execute the same statement *x* number of times, a multiplier may be specified. This is the most obviously useful for spawning multiple processes of the same type.
 
 <pre>
-x * (cmd)
+x * (statement)
 </pre>
+
+Example:
+```
+3 * (spawn BlobRead.js ~> spawn Sink.js)
+```
 
 > Note: This syntax needs to be revised to disambiguate arithmetic ops if they are added to the DSL.
 
@@ -107,6 +112,36 @@ node <i>script(s)</i> [args] [tags] [as <i>name</i>]
 
 
 ## <a name="Piping"></a> Piping
+A key focus of this DSL is being able to support complex graph structures (e.g. [benchmarks](./dsl-benchmarks)). We determined five key communication patterns:
+1. One-to-One
+1. Replicate/Join
+1. Split/Merge
+1. Pool Processing
+1. Many-to-many
+
+Note: We think of pipes in the same way as Bash: a "pipe" from process *A* to process *B* means the standard output (stdout) of *A* is send to the standard input (stdin) of *B*. Due to the distibuted nature of OneOS, the data is sent between processes via messages rather than as a data stream.
+
+### 1. One-to-One
+Pipes the output from one process to another process. This pattern is what is supported by the Bash pipe operator '|'.
+
+### 2. Replicate/Join
+Replication refers to piping the stdout of a single process to the stdin of multiple processes. Each pipe is a duplicate so that each receiving process receives an exact copy of the sender's output. This is equivalent to the sender having a one-to-one pipe with every receiver. An application is the *videoStreamer* process that streams the video to multiple recipiants: [ThingsJS Surveillance](images/thingsjs-video.png).
+
+Joining is when multiple processes all send their output to a single receiver. This is equivalent to each sender creating a one-to-one pipe with the receiver. An example is a logger process that logs data for many processes.
+
+### 3. Split/Merge (TBD)
+As mentioned, data is transferred between processes via messages due to the distributed nature of OneOS. Splitting is when a message is split into chunks and each chunk is sent to a different receiving process. Merging is when messages sent be multiple processes are combined into a single message before being delivered to the receiver.
+
+There are unknowns to be determined around ordering semantics, how to determine/specify the offsets at which to split messages, and whether or not this functionality should even be supported at the OS level.
+
+### 4. Pool Processing (TBD)
+Pool processing is used in the scenario that there are several processes running the same program (i.e. a pool) and the sender does not care which process receives the data. Details around load balancing still need to be worked out.
+
+### 5. Many-to-Many
+Many-to-many patterns consist of multiple senders and receivers. Each of the many-to-many patterns can be broken down into multiple instances of one of the previous patterns.
+
+## Piping Syntax
+
 *sender*: a process outputting data to one or more pipes
 
 *receiver*: a process receiving data from one or more pipes
@@ -258,7 +293,7 @@ spawn program_A.js as "A"
 node program_A2.js log.txt as "A"
 node program_C.js as "C"
 node program_D.js as "D"
-node program_B as "B"
+node program_B.js as "B"
 
 connect [A ~> C, A ~> D, B ~> C] as "graph_A"
 
@@ -274,7 +309,7 @@ spawn "D"
 3 * (spawn program_A.js as "A")
 ```
 
-## Spawn Connect (TBD)
+## Spawn Connect
 The *spawn_connect* command is identical to the *connect* command except the graph is immediately spawned so it doesn't require a name.
 <pre>
 spawn_connect <i>list_of_edges</i>
@@ -298,7 +333,24 @@ These other elements have been briefly brought during discussions:
     - Objects
     - Loops
 - A "Job" abstraction.
-    - A group of processes performing a task could be grouped into a "job". OneOS user's could then potentially monitor and manage graphs rather than processes.
+    - A group of processes performing a task could be grouped into a "job". OneOS users could then potentially monitor and manage graphs rather than processes.
     - Creates a clear separation between graphs.
 
 The language currently described in this document only consists of individual commands. Kumseok has mentioned he has had to use richer programming language features like functions and objects to support the actions he needed to do.
+
+# Design Process
+To support complex arrangements of processes communicating with each other, we could not rely on the semantics of the Bash pipe operator (i.e. one-to-one piping). We determined several [piping patterns](#Piping) users can use as the building blocks to create complex programs (e.g. [benchmarks](./dsl-benchmarks)). We then developed **Nodes** as an abstract placeholder for processes and **Edges** as an abstract placeholder for pipes. These placeholders allow the user to define processes and pipes but have them actually created in the OneOS runtime later. For example, a user may want to define a process and then several pipes to or from it, but only have the process and pipes created in the OneOS runtime after they have all been defined. Furthermore, to define multiple pipes to or from a process, we often need to reference a process multiple times which is where Node Groups came in. In the following example, *A* needs to be referenced twice to create pipes to C and D:
+
+![diagram](./images/some-to-some.png)
+
+**Node Groups** allow users to attach a string identifier to one or more Nodes. They also provide a simple way to add more processes to an existing graph of processes. Suppose a Node Group has Edges to a from other Nodes or Node Groups. A new Node can be added to the group and it will automatically inherit the Node Group's Edges and have the corresponding pipes created in the runtime.
+
+By connecting pipes to and from processes, we are already implicitly creating graph structures. The **Graph** construct was a natural extension that allows the user to assign a string identifier to a set of pipes. For example, the following code creates a Graph for the above diagram with the identifier "graph":
+```
+connect [A ~> C, A ~> D, B ~> C] as "graph"
+```
+
+Currently, the only benefit of maintaining the graph structure is that the user can define a graph and then "spawn" it at a later time. There isn't any need to reference a graph once all of its processes have been spawned. Eventually, new features could be added that let users manage graphs. For example, commands could be added for printing out a graph's pipes and processes or killing all the processes in a graph.
+
+## Drawbacks
+The user is now thinking in terms of the Graph and Node Group abstractions rather than the actually processes and pipes that are created in the runtime. These Node Groups and Graphs add additional state that must be maintained. Currently lists of the Node Groups and Graphs are maintained by the interpreter in memory, which will lead to problems if the interpreter process crashes.
