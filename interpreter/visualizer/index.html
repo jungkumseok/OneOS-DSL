@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <base href="/">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>OneOS DSL Visualizer</title>
+    <link href="http://fonts.cdnfonts.com/css/iunito" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.14/ace.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.14/worker-javascript.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.14/theme-monokai.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.14/mode-javascript.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="app.js"></script>
+  </head>
+<style>
+body { padding: 0; margin: 0; font-family: Iunito, sans-serif; }
+
+button {
+  box-shadow: 0 0 5px rgba(0,0,0,0.5);
+  border: #aaa;
+  padding: 1em;
+  background: #aaf;
+}
+button:hover {
+  background: #ccf;
+}
+
+table {
+  box-shadow: 0 0 5px rgba(0,0,0,0.5);
+}
+
+table>thead {
+  background: gray;
+}
+
+.tabs {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.tabs>ul {
+  display: flex;
+  margin: 0;
+  padding: 0;
+}
+.tabs>ul>li {
+  display: block;
+  flex: 1;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.tabs>ul>li.is-active {
+  border-top: 1px solid black;
+  border-right: 1px solid black;
+  border-bottom: none;
+  border-left: 1px solid black;
+  background: white;
+}
+.tabs>ul>li {
+  border: 1px solid #aaa;
+  background: #eee;
+}
+.tabs>ul>li>a {
+  display: inline-block;
+  padding: 0.5em;
+  width: 100%;
+  box-sizing: border-box;
+}
+.tabs>div {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 1em;
+}
+
+#terminal {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: black;
+  color:white;
+  font-family: Consolas, monospace;
+}
+
+#terminal p {
+  margin: 0.25em;
+  white-space: pre-wrap;
+}
+
+#terminal>div {
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+#terminal>input {
+  background: black;
+  padding: 0.25em;
+  font-size: 1.25em;
+  font-family: Consolas, monospace;
+  color: white;
+  outline: none;
+  border: none;
+}
+
+</style>
+  <body>
+  	<div id="main"></div>
+  </body>
+</html>

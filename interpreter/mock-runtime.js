@@ -121,6 +121,19 @@ class Host {
 		if (!this.tags.includes(tag)) this.tags.push(tag);
 		else throw new Error('Host ' + this.id + ' already has a tag #' + tag);
 	}
+
+	toJSON(){
+		return {
+			id: this.id,
+			procs: this.procs.map(proc => ({
+				id: proc.id,
+				host: this.id,
+				program: proc.program,
+				args: proc.args
+			})),
+			tags: this.tags
+		}
+	}
 }
 
 class Process {
@@ -139,6 +152,15 @@ class Process {
 
 	setHost (host) {
 		this.host = host;
+	}
+
+	toJSON(){
+		return {
+			id: this.id,
+			host: this.host.id,
+			program: this.program,
+			args: this.args
+		}
 	}
 }
 Process.getID = (function* getID(){
@@ -218,8 +240,19 @@ class MockRuntime {
 			new Host('pi-4')
 		];
 		this.root = Directory.fromJSON(SampleDirectory);
-		this.procs = [];
-		this.pipes = [];
+		this.procs = [
+			new Process(this.hosts[0], 'video-streamer.js', [ '/dev/video0' ]),
+			new Process(this.hosts[1], 'video-streamer.js', [ '/dev/video0' ]),
+			new Process(this.hosts[2], 'video-streamer.js', [ '/dev/video0' ]),
+			new Process(this.hosts[3], 'video-recorder.js', [ '/home/ubc/data/video-pi-0' ]),
+			new Process(this.hosts[4], 'video-recorder.js', [ '/home/ubc/data/video-pi-1' ]),
+			new Process(this.hosts[2], 'video-recorder.js', [ '/home/ubc/data/video-pi-2' ])
+		];
+		this.pipes = [
+			new Pipe(this.procs[0], this.procs[3]),
+			new Pipe(this.procs[1], this.procs[4]),
+			new Pipe(this.procs[2], this.procs[5])
+		];
 	}
 
 	/* checks if the file exists */
