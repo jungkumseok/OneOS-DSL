@@ -44,7 +44,10 @@ state.methods = {
 	},
 	evaluate: async (clients, line) => {
 		let result = await interpreter.eval(line);
-		return [ 'print', String(result) ];
+		clients.forEach(client => {
+			client.send(JSON.stringify([ 'updateRuntime', state.runtime ]));
+		});
+		return [ 'print', JSON.stringify(result) ];
 	},
 	getState: async (clients) => {
 		clients.forEach(client => {
