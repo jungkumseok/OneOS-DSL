@@ -131,18 +131,8 @@ Interpreter.prototype.eval = async function (str) {
 };
 
 Interpreter.prototype.evalGraph = async function (input) {
-  var input = `graph PersistentEncryptor {\n
-    node sensor = agent(es6, ubc/bin/sensor.js)\n
-    node actuator = agent(py3, ubc/bin/actuator.js)\n
-    edge s2a = sensor -> actuator\n
-    graph PersistentEncryptorRecursive {\n
-      node sensor2 = agent(es6, ubc/bin/sensor.js)\n
-      edge s2a2 = sensor2 -> actuator\n
-    }
-  }`;
   var lines = input.split("\n");
   for (var line of lines) {
-    console.log(line);
     await this.evaluate(this.compile(line), this.environ);
   }
 };

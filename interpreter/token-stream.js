@@ -75,7 +75,8 @@ function TokenStream(input) {
       }
       return is_digit(ch);
     });
-    return { type: "num", value: parseFloat(number) };
+    var id = read_while(is_word);
+    return { type: "num", value: parseFloat(number), args: id };
   }
 
   function read_word() {

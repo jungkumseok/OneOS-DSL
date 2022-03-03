@@ -14,14 +14,7 @@ async function readInput(interpreter) {
     }
     if (input.startsWith("graph")) {
       interpreter
-        .evalGraph(str)
-        .then((res) => {
-          for (var resElem of res) {
-            if (resElem != undefined) {
-              console.log(resElem);
-            }
-          }
-        })
+        .evalGraph(input)
         .catch((err) => console.log(err.toString()))
         .finally(() => {
           readInput(interpreter);

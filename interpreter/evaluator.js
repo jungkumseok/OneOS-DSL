@@ -82,6 +82,14 @@ function spawn_graph(env, graph) {
   }
 }
 
+function spawn_node(env, nd) {
+  env.nodeSpawnQueue.add(nd);
+}
+
+function spawn_edge(env, edge) {
+  env.edgeSpawnQueue.add(edge);
+}
+
 function verify_script_exists(env, cmd, first_arg) {
   var arg_val = first_arg.value;
   if (first_arg.type == "num") {
@@ -105,6 +113,16 @@ function get_args(args_arr) {
 }
 
 function create_node(env, exp, spawn) {
+  if (spawn == true) {
+    var first_arg = exp.args[0];
+    verify_script_exists(env, cmd, first_arg);
+
+    var file_name = first_arg.value;
+    var args = get_args(exp.args.slice(1));
+    var nd = new Node(file_name, args, exp.attrs);
+    env.nodeSpawnQueue.add(nd);
+    return;
+  }
   if (
     exp.args.length != 4 ||
     !exp.args[2].value.startsWith("agent") ||
@@ -155,16 +173,19 @@ function create_edge(env, exp) {
   ) {
     throw new Error(`Variable name \"${exp.args[0].value}\" already exists`);
   }
-  var edge = new Edge(exp.args[2].value, exp.args[4].value, exp.args[3].value);
+  var edge = new Edge(
+    env.nodeVarMap.get(exp.args[2].value),
+    env.nodeVarMap.get(exp.args[4].value),
+    exp.args[3].value
+  );
   env.edgeVarMap.set(exp.args[0].value, edge);
-  env.nodeVarMap.get(exp.args[2].value).out_edges.push(exp.args[4].value);
+  env.nodeVarMap.get(exp.args[2].value).out_edges.push(edge);
+  env.nodeVarMap.get(exp.args[4].value).in_edges.push(edge);
   if (env.graphStack.length > 0) {
     //get last element of graphStack
     var graph = env.graphStack[env.graphStack.length - 1];
     graph.edges.push(edge);
-    console.log(graph);
   }
-  console.log(env.nodeVarMap);
 }
 
 /* Parses nested lists containing Nodes and Node Groups string IDs into a 1D list of Nodes and Node Groups */
@@ -263,14 +284,13 @@ async function evaluate(exp, env) {
         res.push(await evaluate(exp, env));
         // console.log(res); // TODO: remove print after debugging
       }
-
       // Wait until async verifications resolve
       await Promise.all(env.verifs)
         .then(() => {
           let spawner = new Spawner(env);
           return Promise.all([
             spawner.spawn_nodes(env.nodeSpawnQueue),
-            spawner.create_pipes(env.edgeSpawnQueue),
+            //spawner.create_pipes(env.edgeSpawnQueue),
           ]);
         })
         .finally(() => {
@@ -308,16 +328,27 @@ async function evaluate_cmd(exp, env) {
       if (first_arg.type == "str") {
         // TODO: prevent a graph and node group from having the same name
         var id = first_arg.value;
-        if (is_node_group(env, id)) {
-          spawn_node_group(env, env.NodeGroups[id]);
-        } else if (is_graph(env, id)) {
-          spawn_graph(env, env.Graphs[id]);
+        if (env.graphVarMap.has(id)) {
+          spawn_graph(env, env.graphVarMap.get(id));
+        } else if (env.nodeVarMap.has(id)) {
+          spawn_node(env, env.nodeVarMap.get(id));
+        } else if (env.edgeVarMap.has(id)) {
+          if (
+            env.edgeVarMap.get(id).sender.pid == null ||
+            env.edgeVarMap.get(id).receiver.pid == null
+          ) {
+            throw new Error(
+              "Pipe creation failed, one of the nodes is not spawned yet"
+            );
+          } else {
+            spawn_edge(env, env.edgeVarMap.get(id));
+          }
         } else {
           throw new Error(
-            `\"${id}\" does not correspond to a node group or graph`
+            `\"${id}\" does not correspond to a graph, node, or edge`
           );
         }
-        return;
+        return "Success";
       } else {
         // We are spawning a new node
         return create_node(env, exp, true);
