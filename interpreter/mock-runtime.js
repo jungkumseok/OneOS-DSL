@@ -102,7 +102,7 @@ class Host {
   constructor(id) {
     this.id = id;
     this.procs = [];
-    this.tags = [];
+    this.tags = {};
   }
 
   addProcess(proc) {

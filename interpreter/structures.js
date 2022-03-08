@@ -6,6 +6,7 @@ function Node(script, name, agent_name) {
   this.in_edges = [];
   this.out_edges = [];
   this.pid = null;
+  this.tags = {};
 }
 
 function Edge(sender, receiver, pipe) {

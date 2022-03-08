@@ -251,6 +251,56 @@ function create_graph_cmd(env, exp) {
   env.graphStack.push(graph);
 }
 
+function create_tag(env, exp) {
+  if (exp.args.length < 2) {
+    throw new Error(`Invalid arguments, requires at least one tag`);
+  }
+  var name = exp.args[0].value;
+  //find if name exists in hosts
+  var target = null;
+  for (var host of env.api.hosts) {
+    if (host.id == name) {
+      target = host;
+    }
+  }
+  if (target == null) {
+    if (env.nodeVarMap.has(name)) {
+      target = env.nodeVarMap.get(name);
+      console.log(target);
+    } else {
+      throw new Error(`No node or host named \"${name}\"`);
+    }
+  }
+  for (var i = 1; i < exp.args.length; i++) {
+    //split string with '=' separator
+    var tag = exp.args[i].value.split("=");
+    if (tag.length != 2) {
+      throw new Error(`Invalid tag declaration \"${exp.args[i].value}\"`);
+    }
+    //check if tag already exists
+    if (target.tags[tag[0]] != undefined) {
+      throw new Error(`Tag \"${tag[0]}\" already exists on \"${name}\"`);
+    }
+    //check if tag value is a number
+    if (!isNaN(tag[1])) {
+      //convert to number
+      tag[1] = Number(tag[1]);
+      target.tags[tag[0]] = tag[1];
+      return target;
+    }
+    //check if tag value has quotation marks
+    if (tag[1].charAt(0) != '"' || tag[1].charAt(tag[1].length - 1) != '"') {
+      throw new Error(
+        `Tag value \"${tag[1]}\" must be enclosed in quotation marks if it is not a number`
+      );
+    }
+    //strip quotation marks
+    tag[1] = tag[1].substring(1, tag[1].length - 1);
+    target.tags[tag[0]] = tag[1];
+    return target;
+  }
+}
+
 async function evaluate(exp, env) {
   // console.log(exp)
   switch (exp.type) {
@@ -313,6 +363,8 @@ async function evaluate_cmd(exp, env) {
       return create_edge(env, exp);
     case "graph":
       return create_graph_cmd(env, exp);
+    case "tag":
+      return create_tag(env, exp);
     case "}":
       if (env.graphStack.length > 0) {
         //remove last element of graphStack
@@ -369,7 +421,31 @@ async function evaluate_cmd(exp, env) {
       var graph = await create_graph(env, exp.args[0]);
       spawn_graph(env, graph);
       return graph;
-
+    case "echo":
+      if (exp.args.length == 0) {
+        return "";
+      }
+      var target = null;
+      for (var host of env.api.hosts) {
+        if (host.id == exp.args[0].value) {
+          target = host;
+        }
+      }
+      if (target == null) {
+        //search for node, edge, or graph
+        if (env.nodeVarMap.has(exp.args[0].value)) {
+          target = env.nodeVarMap.get(exp.args[0].value);
+        } else if (env.edgeVarMap.has(exp.args[0].value)) {
+          target = env.edgeVarMap.get(exp.args[0].value);
+        } else if (env.graphVarMap.has(exp.args[0].value)) {
+          target = env.graphVarMap.get(exp.args[0].value);
+        } else {
+          throw new Error(
+            `\"${exp.args[0].value}\" does not correspond to a graph, node, edge, or host`
+          );
+        }
+      }
+      return target;
     default:
       // Check the environment for the command
       return await env.get(exp.cmd).then((res) => res(get_args(exp.args), env));
