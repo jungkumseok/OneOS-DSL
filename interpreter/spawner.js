@@ -19,12 +19,12 @@ function Spawner(env) {
  * and outcoing edges where the other Node is also spawned.
  * @param nodes A list of Nodes and NodeGroups to be spawned.
  */
-Spawner.prototype.spawn_nodes = async function (nodes) {
+Spawner.prototype.spawn_nodes = async function (nodes, hostnames) {
   var spawningNodes = [];
   for (let node of nodes) {
     spawningNodes.push(
       this.env.api
-        .spawn(path.resolve(this.env.cwd, node.script), node.args, node.attrs)
+        .spawn(path.resolve(this.env.cwd, node.script), node.args, hostnames)
         .then((pid) => {
           node.pid = pid;
         })

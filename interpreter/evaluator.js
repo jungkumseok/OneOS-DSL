@@ -1,11 +1,13 @@
 const Spawner = require("./spawner.js");
 const path = require("path");
+const processString = require("./processString.js");
 
 const structures = require("./structures.js");
 const Node = structures.Node;
 const Edge = structures.Edge;
 const Graph = structures.Graph;
 const NodeGroup = structures.NodeGroup;
+const Selector = structures.Selector;
 
 function is_node_group(env, name) {
   return env.NodeGroups[name] != undefined;
@@ -188,6 +190,34 @@ function create_edge(env, exp) {
   }
 }
 
+function create_selector(env, exp) {
+  if (exp.args.length < 3 || exp.args[1].value != "=") {
+    throw new Error(`Invalid arguments, not a valid selector`);
+  }
+  if (env.selectorVarMap.has(exp.args[0].value)) {
+    throw new Error(`Variable name \"${exp.args[0].value}\" already exists`);
+  }
+  //combine all args into one string
+  var selector_str = "";
+  for (var i = 2; i < exp.args.length; i++) {
+    for (var j = 0; j < exp.args[i].value.length; j++) {
+      if (!exp.args[i].value.match(/^[a-zA-Z0-9_&|="<>()]+$/)) {
+        throw new Error(`Invalid selector string \"${exp.args[i].value}\"`);
+      }
+    }
+    selector_str += exp.args[i].value;
+  }
+  var selector;
+  try {
+    selector = new Selector(selector_str, env);
+  } catch (e) {
+    throw new Error(e.message);
+  }
+  //add selector to map
+  env.selectorVarMap.set(exp.args[0].value, selector);
+  return selector;
+}
+
 /* Parses nested lists containing Nodes and Node Groups string IDs into a 1D list of Nodes and Node Groups */
 function get_nodes_and_groups(env, nested_arr) {
   var node_arr = [];
@@ -256,6 +286,10 @@ function create_tag(env, exp) {
     throw new Error(`Invalid arguments, requires at least one tag`);
   }
   var name = exp.args[0].value;
+  //check if name begins with a letter
+  if (!name.match(/^[a-zA-Z]/)) {
+    throw new Error(`Invalid tag name \"${name}\"`);
+  }
   //find if name exists in hosts
   var target = null;
   for (var host of env.api.hosts) {
@@ -282,27 +316,33 @@ function create_tag(env, exp) {
       throw new Error(`Tag \"${tag[0]}\" already exists on \"${name}\"`);
     }
     //check if tag value is a number
-    if (!isNaN(tag[1])) {
+    if (!isNaN(tag[1]) && tag[1] != true && tag[1] != false) {
       //convert to number
       tag[1] = Number(tag[1]);
       target.tags[tag[0]] = tag[1];
-      return target;
+      continue;
+    }
+    //check if tag value is a boolean
+    if (tag[1] == "true" || tag[1] == "false") {
+      tag[1] = tag[1] == "true";
+      target.tags[tag[0]] = tag[1];
+      continue;
     }
     //check if tag value has quotation marks
     if (tag[1].charAt(0) != '"' || tag[1].charAt(tag[1].length - 1) != '"') {
       throw new Error(
-        `Tag value \"${tag[1]}\" must be enclosed in quotation marks if it is not a number`
+        `Tag value \"${tag[1]}\" must be enclosed in quotation marks if it is not a number or boolean`
       );
     }
     //strip quotation marks
-    tag[1] = tag[1].substring(1, tag[1].length - 1);
+    //tag[1] = tag[1].substring(1, tag[1].length - 1);
     target.tags[tag[0]] = tag[1];
-    return target;
   }
+  return target;
 }
 
 async function evaluate(exp, env) {
-  // console.log(exp)
+  //console.log(exp);
   switch (exp.type) {
     case "num":
     case "str":
@@ -338,6 +378,18 @@ async function evaluate(exp, env) {
       await Promise.all(env.verifs)
         .then(() => {
           let spawner = new Spawner(env);
+          if (env.matchedHosts && env.matchedHosts.length > 0) {
+            //convert matchedhosts to array of host id's
+            let host_ids = [];
+            for (var host of env.matchedHosts) {
+              host_ids.push(host.id);
+            }
+            //spawn nodes
+            env.matchedHosts = [];
+            return Promise.all([
+              spawner.spawn_nodes(env.nodeSpawnQueue, host_ids),
+            ]);
+          }
           return Promise.all([
             spawner.spawn_nodes(env.nodeSpawnQueue),
             //spawner.create_pipes(env.edgeSpawnQueue),
@@ -365,6 +417,8 @@ async function evaluate_cmd(exp, env) {
       return create_graph_cmd(env, exp);
     case "tag":
       return create_tag(env, exp);
+    case "selector":
+      return create_selector(env, exp);
     case "}":
       if (env.graphStack.length > 0) {
         //remove last element of graphStack
@@ -377,7 +431,138 @@ async function evaluate_cmd(exp, env) {
     case "spawn":
       // If first arg is a string, then we are spawning an existing node group or graph
       var first_arg = exp.args[0];
-      if (first_arg.type == "str") {
+      var hosts = env.api.hosts;
+      var host_map = new Map();
+      for (var host of hosts) {
+        host_map.set(host.id, host);
+      }
+      if (exp.args.length == 3 && exp.args[1].value == "on") {
+        var selector1name = exp.args[0].value;
+        var selector2name = exp.args[2].value;
+        //check if selector1 exists
+        if (!env.selectorVarMap.has(selector1name)) {
+          throw new Error(`Selector \"${selector1name}\" does not exist`);
+        }
+        //check if selector2 exists
+        if (!env.selectorVarMap.has(selector2name)) {
+          throw new Error(`Selector \"${selector2name}\" does not exist`);
+        }
+        var selectorNodes = env.selectorVarMap.get(selector1name);
+        var selectorHosts = env.selectorVarMap.get(selector2name);
+        selectorNodes.evalStr = selectorNodes.str;
+
+        //loop through nodes in env.nodeVarMap
+        var matchedNodes = [];
+        for (var node of env.nodeVarMap.values()) {
+          //loop through node tags
+          for (const prop in node.tags) {
+            for (const tag of selectorNodes.tags) {
+              if (prop == tag.key) {
+                if (tag.operator == "=" && node.tags[prop] == tag.value)
+                  tag.curVal = true;
+                else if (
+                  tag.operator == ">" &&
+                  parseInt(node.tags[prop]) > parseInt(tag.value)
+                )
+                  tag.curVal = true;
+                else if (
+                  tag.operator == "<" &&
+                  parseInt(node.tags[prop]) < parseInt(tag.value)
+                )
+                  tag.curVal = true;
+              }
+            }
+          }
+          for (const tag of selectorNodes.tags) {
+            if (tag.curVal === true) {
+              selectorNodes.evalStr = selectorNodes.evalStr.replace(
+                new RegExp(selectorNodes.words[tag.wordIndex], "g"),
+                "true"
+              );
+            } else {
+              selectorNodes.evalStr = selectorNodes.evalStr.replace(
+                new RegExp(selectorNodes.words[tag.wordIndex], "g"),
+                "false"
+              );
+            }
+          }
+          for (var i = 0; i < selectorNodes.words.length; i++) {
+            selectorNodes.evalStr = selectorNodes.evalStr.replace(
+              new RegExp(selectorNodes.words[i], "g"),
+              "false"
+            );
+          }
+          if (processString(selectorNodes.evalStr)) {
+            matchedNodes.push(node);
+          }
+          //reset tags
+          for (const tag of selectorNodes.tags) {
+            tag.curVal = false;
+          }
+          selectorNodes.evalStr = selectorNodes.str;
+        }
+        if (matchedNodes.length == 0) {
+          throw new Error(`No nodes matched selector \"${selector1name}\"`);
+        }
+        //loop through hosts in hostmap
+        var matchedHosts = [];
+        for (var host of host_map.values()) {
+          //loop through host tags
+          for (const prop in host.tags) {
+            for (const tag of selectorHosts.tags) {
+              if (prop == tag.key) {
+                if (tag.operator == "=" && host.tags[prop] == tag.value)
+                  tag.curVal = true;
+                else if (
+                  tag.operator == ">" &&
+                  parseInt(host.tags[prop]) > parseInt(tag.value)
+                )
+                  tag.curVal = true;
+                else if (
+                  tag.operator == "<" &&
+                  parseInt(host.tags[prop]) < parseInt(tag.value)
+                )
+                  tag.curVal = true;
+              }
+            }
+          }
+          for (const tag of selectorHosts.tags) {
+            if (tag.curVal === true) {
+              selectorHosts.evalStr = selectorHosts.evalStr.replace(
+                new RegExp(selectorHosts.words[tag.wordIndex], "g"),
+                "true"
+              );
+            } else {
+              selectorHosts.evalStr = selectorHosts.evalStr.replace(
+                new RegExp(selectorHosts.words[tag.wordIndex], "g"),
+                "false"
+              );
+            }
+          }
+          for (var i = 0; i < selectorHosts.words.length; i++) {
+            selectorHosts.evalStr = selectorHosts.evalStr.replace(
+              new RegExp(selectorHosts.words[i], "g"),
+              "false"
+            );
+          }
+          if (eval(selectorHosts.evalStr)) {
+            matchedHosts.push(host);
+          }
+          //reset tags
+          for (const tag of selectorHosts.tags) {
+            tag.curVal = false;
+          }
+          selectorHosts.evalStr = selectorHosts.str;
+        }
+        if (matchedHosts.length == 0) {
+          throw new Error(`No hosts matched selector \"${selector2name}\"`);
+        }
+        for (var node of matchedNodes) {
+          spawn_node(env, node);
+        }
+        env.matchedHosts = matchedHosts;
+        return "Success";
+      } else if (first_arg.type == "str") {
         // TODO: prevent a graph and node group from having the same name
         var id = first_arg.value;
         if (env.graphVarMap.has(id)) {

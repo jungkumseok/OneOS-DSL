@@ -63,7 +63,7 @@ function Interpreter(runtime_api, builtins) {
 
   // Map of variable names to graphs
   this.environ.graphVarMap = new Map();
-
+  this.environ.selectorVarMap = new Map();
   this.environ.curr_graph = null;
   this.environ.graphStack = [];
 }

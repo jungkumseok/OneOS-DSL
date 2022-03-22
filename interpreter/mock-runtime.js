@@ -329,7 +329,7 @@ class MockRuntime {
 
   /* starts a new process */
   // TODO: only spawn on devices that have all the matching tags
-  async spawn(agentAbsPath, args, ...tags) {
+  async spawn(agentAbsPath, args, hostnames) {
     if (typeof agentAbsPath === "string") {
       let tokens = windows ? agentAbsPath.split("\\") : agentAbsPath.split("/");
       if ((!windows && tokens[0] !== "") || (windows && tokens[0] !== "C:"))
@@ -337,7 +337,14 @@ class MockRuntime {
       let item = this.root.getContent(tokens.slice(1));
       // console.log(item);
       if (item instanceof File) {
-        let host = selectRandom(this.hosts);
+        let host;
+        console.log("HOSTNAMES: ", hostnames);
+        if (hostnames) {
+          var hostname = selectRandom(hostnames);
+          host = this.hosts.find((host) => host.id === hostname);
+        } else {
+          host = selectRandom(this.hosts);
+        }
         let proc = new Process(host, item, args);
         this.procs.push(proc);
 
