@@ -545,7 +545,7 @@ async function evaluate_cmd(exp, env) {
               "false"
             );
           }
-          if (eval(selectorHosts.evalStr)) {
+          if (processString(selectorHosts.evalStr)) {
             matchedHosts.push(host);
           }
           //reset tags
