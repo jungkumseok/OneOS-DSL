@@ -338,7 +338,6 @@ class MockRuntime {
       // console.log(item);
       if (item instanceof File) {
         let host;
-        console.log("HOSTNAMES: ", hostnames);
         if (hostnames) {
           var hostname = selectRandom(hostnames);
           host = this.hosts.find((host) => host.id === hostname);

@@ -1,5 +1,3 @@
-const processString = require("./processString.js");
-
 function Node(script, name, agent_name) {
   this.name = name;
   this.agent = agent_name;
@@ -92,7 +90,7 @@ function Selector(str, env) {
     );
   }
   try {
-    processString(this.testStr);
+    eval(this.testStr);
   } catch (e) {
     throw new Error("Incorrect selector format");
   }
