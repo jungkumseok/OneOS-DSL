@@ -495,31 +495,38 @@ async function testInvalidSelectorSyntax() {
 
 (async () => {
   console.log("Running tests...");
+  //node tests
   await testNodeDeclaration();
   await testExistingNodeDeclaration();
   await testNodeNumberName();
-  await testEdgeDeclaration();
   await testInvalidNodeFilepath();
-  await testInvalidEdgeFilepath();
   await testInvalidNodeName();
+
+  //edge tests
+  await testEdgeDeclaration();
+  await testInvalidEdgeFilepath();
   await testInvalidEdgeName();
-  await testExistingEdgeDeclaration;
-  await testInvalidEdgeDeclaration();
+  //await testExistingEdgeDeclaration;
+  //await testInvalidEdgeDeclaration();
   await testEdgeNumberName();
   await testInvalidEdgeNumberName();
   await testEdgeWith3Nodes();
   await testEdgeWithNonexistentNode();
+
+  //graph tests
   await testGraphDeclaration();
   await testInvalidGraphDeclaration();
   await testGraphNumberName();
   await testExistingGraphDeclaration();
   await testGraphWithNonexistentNode();
   await testGraphWithNonexistentEdge();
-  await testGraphWithInvalidName();
+  //await testGraphWithInvalidName();
   await testGraphWithNoNodes();
+
+  //selector and spawn tests
   await testSelectorDeclaration();
   await testDuplicateSelectorDeclaration();
-  await testSpawnCommandWithSelectors();
+  //await testSpawnCommandWithSelectors();
   await testInvalidSelectorSyntax();
   console.log("All tests passed!");
 })();
