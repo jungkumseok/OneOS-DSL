@@ -224,7 +224,7 @@ function parse(input) {
 
   function parse_cmd() {
     cmd = input.next().value;
-    console.log("Parsing command: " + cmd);
+    //console.log("Parsing command: " + cmd);
     // TODO: suport unix style options?
     var args = parse_args();
 
@@ -319,7 +319,7 @@ function parse(input) {
     }
 
     var tok = input.peek();
-    console.log(tok);
+    //console.log(tok);
 
     if (expect_id && tok.type == "w") {
       tok = input.next();

@@ -3,6 +3,7 @@ const path = require("path");
 const processString = require("./processString.js");
 
 const structures = require("./structures.js");
+const e = require("express");
 const Node = structures.Node;
 const Edge = structures.Edge;
 const Graph = structures.Graph;
@@ -300,7 +301,8 @@ function create_tag(env, exp) {
   if (target == null) {
     if (env.nodeVarMap.has(name)) {
       target = env.nodeVarMap.get(name);
-      console.log(target);
+    } else if (env.graphVarMap.has(name)) {
+      target = env.graphVarMap.get(name);
     } else {
       throw new Error(`No node or host named \"${name}\"`);
     }

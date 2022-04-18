@@ -228,7 +228,7 @@ class MockRuntime {
     ];
     this.root = Directory.fromJSON(SampleDirectory);
     this.procs = [
-      new Process(this.hosts[0], "video-streamer.js", ["/dev/video0"]),
+      /*new Process(this.hosts[0], "video-streamer.js", ["/dev/video0"]),
       new Process(this.hosts[1], "video-streamer.js", ["/dev/video0"]),
       new Process(this.hosts[2], "video-streamer.js", ["/dev/video0"]),
       new Process(this.hosts[3], "video-recorder.js", [
@@ -239,12 +239,12 @@ class MockRuntime {
       ]),
       new Process(this.hosts[2], "video-recorder.js", [
         "/home/ubc/data/video-pi-2",
-      ]),
+      ]),*/
     ];
     this.pipes = [
-      new Pipe(this.procs[0], this.procs[3]),
+      /*new Pipe(this.procs[0], this.procs[3]),
       new Pipe(this.procs[1], this.procs[4]),
-      new Pipe(this.procs[2], this.procs[5]),
+      new Pipe(this.procs[2], this.procs[5]),*/
     ];
   }
 

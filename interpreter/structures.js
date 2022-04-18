@@ -1,3 +1,5 @@
+const processString = require("./processString");
+
 function Node(script, name, agent_name) {
   this.name = name;
   this.agent = agent_name;
@@ -18,6 +20,8 @@ function Edge(sender, receiver, pipe) {
 function Graph(name) {
   this.name = name;
   this.edges = [];
+  this.nodes = [];
+  this.tags = {};
 }
 
 function NodeGroup(name) {
@@ -90,7 +94,7 @@ function Selector(str, env) {
     );
   }
   try {
-    eval(this.testStr);
+    processString(this.testStr);
   } catch (e) {
     throw new Error("Incorrect selector format");
   }

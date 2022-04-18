@@ -152,6 +152,7 @@ var PRECEDENCE = {
 };
 
 var FALSE = { type: "bool", value: false };
+
 function parse(input) {
   var PRECEDENCE = {
     "=": 1,
@@ -340,8 +341,8 @@ function process(parse) {
 function processString(str) {
   var input = InputStream(str);
   var token = TokenStream(input);
-  var parse = parse(token);
-  return process(parse.prog[0]);
+  var p = parse(token);
+  return process(p.prog[0]);
 }
 
 module.exports = processString;
