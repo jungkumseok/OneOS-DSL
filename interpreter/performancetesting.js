@@ -14,7 +14,7 @@ async function measureNodePerformance(numTimes) {
   }
   var end = new Date().getTime();
   var time = end - start;
-  console.log("Time: " + time + "ms");
+  console.log(numtimes + "Node runs: " + time + "ms");
 }
 
 async function measureSpawnPerformance(numTimes) {
@@ -32,16 +32,13 @@ async function measureSpawnPerformance(numTimes) {
     tag pi-2 k${i}=2
     selector nodeselector${i} = region${i}="vancouver"
     selector tagselector${i} = k${i}>5
-    spawn nodeselector${i} on tagselector${i}
-    selector nodeselectortwo${i} = region${i}="vancouver" | type${i}="sensor"
-    selector tagselectortwo${i} = k${i} > 5 | (k${i}<5 & country${i}="canada")
-    spawn nodeselectortwo${i} on tagselectortwo${i}`
+    spawn nodeselector${i} on tagselector${i}`
     );
     await interpreter.evaluate(AST, interpreter.environ);
   }
   var end = new Date().getTime();
   var time = end - start;
-  console.log("Time: " + time + "ms");
+  console.log(numtimes + " Spawn runs: " + time + "ms");
 }
 
 console.log("10 node runs:");
