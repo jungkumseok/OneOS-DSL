@@ -14,7 +14,7 @@ async function measureNodePerformance(numTimes) {
   }
   var end = new Date().getTime();
   var time = end - start;
-  console.log(numtimes + "Node runs: " + time + "ms");
+  console.log(numTimes + " Node runs: " + time + "ms");
 }
 
 async function measureSpawnPerformance(numTimes) {
@@ -38,22 +38,14 @@ async function measureSpawnPerformance(numTimes) {
   }
   var end = new Date().getTime();
   var time = end - start;
-  console.log(numtimes + " Spawn runs: " + time + "ms");
+  console.log(numTimes + " Spawn runs: " + time + "ms");
 }
 
-console.log("10 node runs:");
-measureNodePerformance(10);
-console.log("100 node runs:");
-measureNodePerformance(100);
-console.log("1000 node runs:");
-measureNodePerformance(1000);
-console.log("10000 node runs:");
-measureNodePerformance(10000);
-console.log("10 spawn runs:");
-measureSpawnPerformance(10);
-console.log("100 spawn runs:");
-measureSpawnPerformance(100);
-console.log("1000 spawn runs:");
+// measureNodePerformance(10);
+// measureNodePerformance(100);
+// measureNodePerformance(1000);
+//measureNodePerformance(10000);
+//measureSpawnPerformance(10);
+//measureSpawnPerformance(100);
 measureSpawnPerformance(1000);
-console.log("10000 spawn runs:");
-measureSpawnPerformance(10000);
+// measureSpawnPerformance(10000);
