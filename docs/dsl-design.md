@@ -112,7 +112,7 @@ node <i>script(s)</i> [args] [tags] [as <i>name</i>]
 
 
 ## <a name="Piping"></a> Piping
-A key focus of this DSL is being able to support complex graph structures (e.g. [benchmarks](./dsl-benchmarks)). We determined five key communication patterns:
+A key focus of this DSL is being able to support complex graph structures (e.g. [benchmarks](./dsl-benchmarks.md)). We determined five key communication patterns:
 1. One-to-One
 1. Replicate/Join
 1. Split/Merge
