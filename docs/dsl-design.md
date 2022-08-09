@@ -112,7 +112,7 @@ node <i>script(s)</i> [args] [tags] [as <i>name</i>]
 
 
 ## <a name="Piping"></a> Piping
-A key focus of this DSL is being able to support complex graph structures (e.g. [benchmarks](./dsl-benchmarks)). We determined five key communication patterns:
+A key focus of this DSL is being able to support complex graph structures (e.g. [benchmarks](./dsl-benchmarks.md)). We determined five key communication patterns:
 1. One-to-One
 1. Replicate/Join
 1. Split/Merge
@@ -339,7 +339,7 @@ These other elements have been briefly brought during discussions:
 The language currently described in this document only consists of individual commands. Kumseok has mentioned he has had to use richer programming language features like functions and objects to support the actions he needed to do.
 
 # Design Process
-To support complex arrangements of processes communicating with each other, we could not rely on the semantics of the Bash pipe operator (i.e. one-to-one piping). We determined several [piping patterns](#Piping) users can use as the building blocks to create complex programs (e.g. [benchmarks](./dsl-benchmarks)). We then developed **Nodes** as an abstract placeholder for processes and **Edges** as an abstract placeholder for pipes. These placeholders allow the user to define processes and pipes but have them actually created in the OneOS runtime later. For example, a user may want to define a process and then several pipes to or from it, but only have the process and pipes created in the OneOS runtime after they have all been defined. Furthermore, to define multiple pipes to or from a process, we often need to reference a process multiple times which is where Node Groups came in. In the following example, *A* needs to be referenced twice to create pipes to C and D:
+To support complex arrangements of processes communicating with each other, we could not rely on the semantics of the Bash pipe operator (i.e. one-to-one piping). We determined several [piping patterns](#Piping) users can use as the building blocks to create complex programs (e.g. [benchmarks](./dsl-benchmarks.md)). We then developed **Nodes** as an abstract placeholder for processes and **Edges** as an abstract placeholder for pipes. These placeholders allow the user to define processes and pipes but have them actually created in the OneOS runtime later. For example, a user may want to define a process and then several pipes to or from it, but only have the process and pipes created in the OneOS runtime after they have all been defined. Furthermore, to define multiple pipes to or from a process, we often need to reference a process multiple times which is where Node Groups came in. In the following example, *A* needs to be referenced twice to create pipes to C and D:
 
 ![diagram](./images/some-to-some.png)
 
