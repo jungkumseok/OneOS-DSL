@@ -1,7 +1,7 @@
 const stream = require("stream");
 
 const windows = process.platform === "win32";
-
+let jj =1;
 const SampleDirectory = {
   bin: {
     apt: "Package Manager",
@@ -103,6 +103,9 @@ class Host {
     this.id = id;
     this.procs = [];
     this.tags = {};
+    this.limit_memory = 512;
+
+
   }
 
   addProcess(proc) {
@@ -118,7 +121,7 @@ class Host {
     return {
       id: this.id,
       procs: this.procs.map((proc) => ({
-        id: proc.id,
+        // id: proc.id,
         host: this.id,
         program: proc.program,
         args: proc.args,
