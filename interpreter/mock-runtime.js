@@ -1,7 +1,7 @@
 const stream = require("stream");
+const pidusage = require("pidusage");
 
 const windows = process.platform === "win32";
-let jj =1;
 const SampleDirectory = {
   bin: {
     apt: "Package Manager",
@@ -331,7 +331,7 @@ class MockRuntime {
   }
 
   /* starts a new process */
-  // TODO: only spawn on devices that have all the matching tags
+  //TODO: only spawn on devices that have all the matching tags
   async spawn(agentAbsPath, args, hostnames) {
     if (typeof agentAbsPath === "string") {
       let tokens = windows ? agentAbsPath.split("\\") : agentAbsPath.split("/");
@@ -350,6 +350,9 @@ class MockRuntime {
         let proc = new Process(host, item, args);
         this.procs.push(proc);
 
+         pidusage(proc.id, function (err, stats) {
+          console.log(stats)
+        })
         return proc.id;
       } else throw new Error("Cannot spawn a directory");
     } else throw new Error("Invalid argument type for MockRuntime..spawn");

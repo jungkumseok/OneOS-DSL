@@ -1,5 +1,6 @@
 const processString = require("./processString");
 
+//node represents processes
 function Node(script, name, agent_name) {
   this.name = name;
   this.agent = agent_name;

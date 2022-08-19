@@ -12,5 +12,7 @@ the deices so that users can enjoy it.
 4.) There should not be wastage of memory, hence memory should be managed wisely. 
 (allocation & deallocation of RAM should done properly)
 
+5.) Scheduler needs to be highly efficient.
+
 *will continue
 
