@@ -10,6 +10,7 @@ function Node(script, name, agent_name) {
   this.out_edges = [];
   this.pid = null;
   this.tags = {};
+  this.memory = 0;
 }
 
 function Edge(sender, receiver, pipe) {

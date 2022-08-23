@@ -176,7 +176,7 @@ function parse(input) {
     return tok && tok.type == "punc" && (!ch || tok.value == ch) && tok;
   }
   function is_kw(kw) {
-    var tok = input.peek();
+    var tok = input.peek();  
     return tok && tok.type == "kw" && (!kw || tok.value == kw) && tok;
   }
   function is_op(op) {
