@@ -1,5 +1,6 @@
 const stream = require("stream");
 const pidusage = require("pidusage");
+const Node = require("../structures");
 const windows = process.platform === "win32";
 const SampleDirectory = {
     bin: {
@@ -12,9 +13,9 @@ const SampleDirectory = {
         ubc: {
           bin: {
             "observer.js": "Vide Streamer Application",
-            "detetctor.js": "Motion Detector Apllication",
+            "detector.js": "Motion Detector Apllication",
             "notifier.js": "Email Notifier Application",
-            "writer.js": "Logger",
+            "writer.js": "Logger", 
           },
         },
     },
@@ -24,7 +25,7 @@ const SampleDirectory = {
     var: {},
   };
   // helper functions
-function selectRandom(list) {
+function selectRandom(list) { // need to fix this there is no need to declare random hosts.
     return list[Math.floor(list.length * Math.random())];
   }
   class Host {
@@ -32,9 +33,7 @@ function selectRandom(list) {
       this.id = id;
       this.procs = [];
       this.tags = {};
-      this.limit_memory = 512;
-  
-  
+      // this.limit_memory = 512;
     }
   
     addProcess(proc) {
@@ -44,16 +43,16 @@ function selectRandom(list) {
   addProcess(proc) {
     this.procs.push(proc);
   }
-  addTag(tag) {
-    if (!this.tags.includes(tag)) this.tags.push(tag);
-    else throw new Error("Host " + this.id + " already has a tag #" + tag);
-  }
+  // addTag(tag) {
+  //   if (!this.tags.includes(tag)) this.tags.push(tag);
+  //   else throw new Error("Host " + this.id + " already has a tag #" + tag);
+  // }
 
   toJSON() {
     return {
       id: this.id,
       procs: this.procs.map((proc) => ({
-        // id: proc.id,
+        id: proc.id,
         host: this.id,
         program: proc.program,
         args: proc.args,
@@ -95,6 +94,32 @@ class Process {
       yield next++;
     }
   })();
+// class Node{
+//   constructor(script, name, agent_name){
+//     this.name = name;
+//     this.agent_name = agent_name;
+//     this.group = null;
+//     this.script = script;
+//     this.in_edges = [];
+//     this.out_edges = [];
+//     this.pid = Process.getID.next().value;
+//     this.host = host;
+//   }
+//   toJSON() {
+//           return {
+//             id: this.id,
+//             host: this.host.id,
+//             program: this.program,
+//             args: this.args,
+//           };
+//         }
+// }
+Process.getID = (function* getID() {
+  let next = 0;
+  while (true) {
+  yield next++;
+        }
+      })();
 
   class File {
     constructor(name) {
@@ -218,7 +243,6 @@ class Runtime {
     //   return this.hosts;
     // }
   
-   
     /* starts a new process */
     //TODO: only spawn on devices that have all the matching tags
     async spawn(agentAbsPath, args, hostnames) {
@@ -227,7 +251,7 @@ class Runtime {
         if ((!windows && tokens[0] !== "") || (windows && tokens[0] !== "C:"))
           throw new Error("MockRuntime..fileExists expects an absolute path");
         let item = this.root.getContent(tokens.slice(1));
-        // console.log(item);
+        console.log(item);
         if (item instanceof File) {
           let host;
           if (hostnames) {
@@ -236,16 +260,27 @@ class Runtime {
           } else {
             host = selectRandom(this.hosts);
           }
-          let proc = new Process(host, item, args);
+          let proc = new process(host, item, args);
+          // let proc =  Node(item, , host);
+          
+          let new_id = proc.id
           this.procs.push(proc);
-  
-           pidusage(proc.id, function (err, stats) {
-            console.log(stats)
-          })
+            for(let i=0;i<this.procs.length; i++){
+              console.log(this.procs[i]);
+            }
+          // const stats = await pidusage(new_id);
+          // console.log(stats);
+          
+          
+          //  pidusage(proc.id, function (err, stats) {
+          //   console.log(stats)
+          // })
           return proc.id;
+          
         } else throw new Error("Cannot spawn a directory");
       } else throw new Error("Invalid argument type for MockRuntime..spawn");
     }
+   
   
     /* kills a process */
     async kill(pid) {

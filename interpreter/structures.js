@@ -1,8 +1,16 @@
 const processString = require("./processString");
+const pidusage = require("pidUsage");
+// const Runtime = require("./testing/runtime");
+
 
 //node represents processes
 function Node(script, name, agent_name) {
   this.name = name;
+  let arr = ["host-1", "host-2", "host-3"];
+  function selectRandom(arr){
+   return arr[Math.floor(arr.length * Math.random())];
+   }
+  this.host = selectRandom(arr);
   this.agent = agent_name;
   this.group = null;
   this.script = script;
@@ -10,8 +18,9 @@ function Node(script, name, agent_name) {
   this.out_edges = [];
   this.pid = null;
   this.tags = {};
-  this.memory = 0;
-}
+  const used = process.memoryUsage().heapUsed / 1024 / 1024;
+  this.memory = Math.round(used*100)/100; //showing heap memory used by a node.
+}// similar like spawn process
 
 function Edge(sender, receiver, pipe) {
   this.sender = sender;

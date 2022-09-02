@@ -58,7 +58,7 @@ function Interpreter(runtime_api, builtins) {
   // Map of variable names to nodes
   this.environ.nodeVarMap = new Map();
 
-  // Map of variable names to edges
+  // Map of variable names to edgesafevalu
   this.environ.edgeVarMap = new Map();
 
   // Map of variable names to graphs
@@ -133,7 +133,7 @@ Interpreter.prototype.eval = async function (str) {
   console.log("[Interpreter] trying to evaluate " + str);
   return this.evaluate(this.compile(str), this.environ);
 };
-
+//test the code manually 
 Interpreter.prototype.evalGraph = async function (input) {
   var lines = input.split("\n");
   for (var line of lines) {

@@ -57,33 +57,33 @@ function spawn_node_group(env, group) {
   }
 }
 
-function spawn_graph(env, graph) {
+// function spawn_graph(env, graph) {
   /* Spawns any staged nodes in the graph. Pipes are automatically created by the Spawner between
    * edges consisting of at least one staged node when the node is spawned. */
-  for (var edge of graph.edges) {
-    var senders =
-      edge.sender instanceof NodeGroup ? edge.sender.nodes : [edge.sender];
-    var receivers =
-      edge.receiver instanceof NodeGroup
-        ? edge.receiver.nodes
-        : [edge.receiver];
-    for (var sender of senders) {
-      for (var receiver of receivers) {
-        // Explictly create edges if both nodes are spawned.
-        if (sender.pid != null && receiver.pid != null) {
-          env.edgeSpawnQueue.add(new Edge(sender, receiver));
-        } else {
-          if (sender.pid == null) {
-            env.nodeSpawnQueue.add(sender);
-          }
-          if (receiver.pid == null) {
-            env.nodeSpawnQueue.add(receiver);
-          }
-        }
-      }
-    }
-  }
-}
+  // for (var edge of graph.edges) {
+  //   var senders =
+  //     edge.sender instanceof NodeGroup ? edge.sender.nodes : [edge.sender];
+  //   var receivers =
+  //     edge.receiver instanceof NodeGroup
+  //       ? edge.receiver.nodes
+  //       : [edge.receiver];
+  //   for (var sender of senders) {
+  //     for (var receiver of receivers) {
+  //       // Explictly create edges if both nodes are spawned.
+  //       if (sender.pid != null && receiver.pid != null) {
+  //         env.edgeSpawnQueue.add(new Edge(sender, receiver));
+  //       } else {
+  //         if (sender.pid == null) {
+  //           env.nodeSpawnQueue.add(sender);
+  //         }
+  //         if (receiver.pid == null) {
+  //           env.nodeSpawnQueue.add(receiver);
+  //         }
+  //       }
+  //     }
+  //   }
+  // }
+// }
 
 function spawn_node(env, nd) {
   env.nodeSpawnQueue.add(nd);
@@ -116,6 +116,7 @@ function get_args(args_arr) {
 }
 
 function create_node(env, exp, spawn) {
+  // console.log(exp)
   if (spawn == true) {
     var first_arg = exp.args[0];
     verify_script_exists(env, cmd, first_arg);
@@ -126,15 +127,15 @@ function create_node(env, exp, spawn) {
     env.nodeSpawnQueue.add(nd);
     return;
   }
-  if (
-    exp.args.length != 4 ||
-    !exp.args[2].value.startsWith("agent") ||
-    !exp.args[2].value.endsWith(",") ||
-    !exp.args[3].value.endsWith(")") ||
-    exp.args[1].value != "="
-  ) {
-    throw new Error(`Invalid arguments, not a valid agent`);
-  }
+  // if (
+  //   exp.args.length != 4 ||
+  //   !exp.args[2].value.startsWith("agent") ||
+  //   !exp.args[2].value.endsWith(",") ||
+  //   !exp.args[3].value.endsWith(")") ||
+  //   exp.args[1].value != "="
+  // ) {
+  //   throw new Error(`Invalid arguments, not a valid agent`);
+  // }
   exp.args[3].value = exp.args[3].value.substring(
     0,
     exp.args[3].value.length - 1
@@ -271,6 +272,7 @@ async function create_implicit_graph(op_exp, env) {
 }
 
 function create_graph_cmd(env, exp) {
+  // console.group(exp.args.length);
   if (exp.args.length != 2 || exp.args[1].value != "{") {
     throw new Error(`Invalid arguments, not a valid graph`);
   }
