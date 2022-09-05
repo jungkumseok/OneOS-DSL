@@ -14,8 +14,9 @@ const SampleDirectory = {
           bin: {
             "observer.js": "Vide Streamer Application",
             "detector.js": "Motion Detector Apllication",
-            "notifier.js": "Email Notifier Application",
-            "writer.js": "Logger", 
+            "recorder.js": "Video Recorder Application",
+            "viewer.js": "Video Viewer Application",
+            "mail_sender.js": "Mail Sender Application", 
           },
         },
     },

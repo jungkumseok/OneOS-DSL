@@ -342,31 +342,31 @@ class MockRuntime {
 
   /* starts a new process */
   //TODO: only spawn on devices that have all the matching tags
-  // async spawn(agentAbsPath, args, hostnames) {
-  //   if (typeof agentAbsPath === "string") {
-  //     let tokens = windows ? agentAbsPath.split("\\") : agentAbsPath.split("/");
-  //     if ((!windows && tokens[0] !== "") || (windows && tokens[0] !== "C:"))
-  //       throw new Error("MockRuntime..fileExists expects an absolute path");
-  //     let item = this.root.getContent(tokens.slice(1));
-  //     // console.log(item);
-  //     if (item instanceof File) {
-  //       let host;
-  //       if (hostnames) {
-  //         var hostname = selectRandom(hostnames);
-  //         host = this.hosts.find((host) => host.id === hostname);
-  //       } else {
-  //         host = selectRandom(this.hosts);
-  //       }
-  //       let proc = new Process(host, item, args);
-  //       this.procs.push(proc);
+  async spawn(agentAbsPath, args, hostnames) {
+    if (typeof agentAbsPath === "string") {
+      let tokens = windows ? agentAbsPath.split("\\") : agentAbsPath.split("/");
+      if ((!windows && tokens[0] !== "") || (windows && tokens[0] !== "C:"))
+        throw new Error("MockRuntime..fileExists expects an absolute path");
+      let item = this.root.getContent(tokens.slice(1));
+      // console.log(item);
+      if (item instanceof File) {
+        let host;
+        if (hostnames) {
+          var hostname = selectRandom(hostnames);
+          host = this.hosts.find((host) => host.id === hostname);
+        } else {
+          host = selectRandom(this.hosts);
+        }
+        let proc = new Process(host, item, args);
+        this.procs.push(proc);
 
-  //        pidusage(proc.id, function (err, stats) {
-  //         console.log(stats)
-  //       })
-  //       return proc.id;
-  //     } else throw new Error("Cannot spawn a directory");
-  //   } else throw new Error("Invalid argument type for MockRuntime..spawn");
-  // }
+         pidusage(proc.id, function (err, stats) {
+          console.log(stats)
+        })
+        return proc.id;
+      } else throw new Error("Cannot spawn a directory");
+    } else throw new Error("Invalid argument type for MockRuntime..spawn");
+  }
 
 
   /* Checks if a process exists */

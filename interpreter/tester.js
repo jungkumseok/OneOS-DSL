@@ -194,29 +194,10 @@ async function testGraphDeclaration() {
   //check incoming and outgoing edges
   assert.equal(interpreter.environ.nodeVarMap.get("A").in_edges.length, 0);
   assert.equal(interpreter.environ.nodeVarMap.get("A").out_edges.length, 1);
+  assert.equal(interpreter.environ.nodeVarMap.get("B").in_edges.length, 1);
+  assert.equal(interpreter.environ.nodeVarMap.get("B").out_edges.length, 0);
 }
-async function runDemo(){
-  var interpreter = new Interpreter(new MockRuntime());
-  var input = `graph G {\n
-        node A = agent(javascript, ubc/bin/observer.js)\n
-        node B = agent(javascript, ubc/bin/detector.js)\n
-        node C = agent(javascript, ubc/bin/notifier.js)\n
-        node D = agent(javascript, ubc/bin/writer.js)\n
-        edge E = A -> B\n
-        edge F = B -> D\n
-        edge G = B -> C \n
-      }
-      `;
-      //split into lines
-  var lines = input.split("\n");
-  //evaluate each line
-  for (var line of lines) {
-    var AST = interpreter.compile(line);
-    await interpreter.evaluate(AST, interpreter.environ);
-  }
-  
-  
-}
+
 //check graph with nonexistent node
 async function testGraphWithNonexistentNode() {
   var interpreter = new Interpreter(new MockRuntime());
@@ -680,7 +661,6 @@ async function testGraphTags() {
   );
   assert.equal(interpreter.environ.graphVarMap.get("testA").tags.k, 4);
 }
-
 
 async function runTests() {
   console.log("Running tests...");
