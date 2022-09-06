@@ -62,65 +62,39 @@ function selectRandom(list) { // need to fix this there is no need to declare ra
     };
   }
 }
-class Process {
-    constructor(host, file, args) {
-      this.id = Process.getID.next().value;
-      this.host = host;
-      this.program = file;
-      this.args = args || [];
-  
-      this.host.addProcess(this);
-    }
-  
-    setProgram(file) {
-      this.program = file;
-    }
-  
-    setHost(host) {
-      this.host = host;
-    }
-  
-    toJSON() {
-      return {
-        id: this.id,
-        host: this.host.id,
-        program: this.program,
-        args: this.args,
-      };
-    }
-  }
-  Process.getID = (function* getID() {
-    let next = 0;
-    while (true) {
-      yield next++;
-    }
-  })();
-// class Node{
-//   constructor(script, name, agent_name){
-//     this.name = name;
-//     this.agent_name = agent_name;
-//     this.group = null;
-//     this.script = script;
-//     this.in_edges = [];
-//     this.out_edges = [];
-//     this.pid = Process.getID.next().value;
+// class Process {
+//   constructor(host, file, args) {
+//     this.id = Process.getID.next().value;
+//     this.host = host;
+//     this.program = file;
+//     this.args = args || [];
+
+//     this.host.addProcess(this);
+//   }
+
+//   setProgram(file) {
+//     this.program = file;
+//   }
+
+//   setHost(host) {
 //     this.host = host;
 //   }
+
 //   toJSON() {
-//           return {
-//             id: this.id,
-//             host: this.host.id,
-//             program: this.program,
-//             args: this.args,
-//           };
-//         }
+//     return {
+//       id: this.id,
+//       host: this.host.id,
+//       program: this.program,
+//       args: this.args,
+//     };
+//   }
 // }
-Process.getID = (function* getID() {
-  let next = 0;
-  while (true) {
-  yield next++;
-        }
-      })();
+// Process.getID = (function* getID() {
+//   let next = 0;
+//   while (true) {
+//     yield next++;
+//   }
+// })();
 
   class File {
     constructor(name) {
@@ -246,29 +220,29 @@ class Runtime {
   
     /* starts a new process */
     //TODO: only spawn on devices that have all the matching tags
-    async spawn(agentAbsPath, args, hostnames) {
-      if (typeof agentAbsPath === "string") {
-        let tokens = windows ? agentAbsPath.split("\\") : agentAbsPath.split("/");
-        if ((!windows && tokens[0] !== "") || (windows && tokens[0] !== "C:"))
-          throw new Error("MockRuntime..fileExists expects an absolute path");
-        let item = this.root.getContent(tokens.slice(1));
-        console.log(item);
-        if (item instanceof File) {
-          let host;
-          if (hostnames) {
-            var hostname = selectRandom(hostnames);
-            host = this.hosts.find((host) => host.id === hostname);
-          } else {
-            host = selectRandom(this.hosts);
-          }
-          let proc = new process(host, item, args);
-          // let proc =  Node(item, , host);
+    // async spawn(agentAbsPath, args, hostnames) {
+    //   if (typeof agentAbsPath === "string") {
+    //     let tokens = windows ? agentAbsPath.split("\\") : agentAbsPath.split("/");
+    //     if ((!windows && tokens[0] !== "") || (windows && tokens[0] !== "C:"))
+    //       throw new Error("MockRuntime..fileExists expects an absolute path");
+    //     let item = this.root.getContent(tokens.slice(1));
+    //     console.log(item);
+    //     if (item instanceof File) {
+    //       let host;
+    //       if (hostnames) {
+    //         var hostname = selectRandom(hostnames);
+    //         host = this.hosts.find((host) => host.id === hostname);
+    //       } else {
+    //         host = selectRandom(this.hosts);
+    //       }
+    //       let proc = new process(host, item, args);
+    //       // let proc =  Node(item, , host);
           
-          let new_id = proc.id
-          this.procs.push(proc);
-            for(let i=0;i<this.procs.length; i++){
-              console.log(this.procs[i]);
-            }
+    //       let new_id = proc.id
+    //       this.procs.push(proc);
+    //         for(let i=0;i<this.procs.length; i++){
+    //           console.log(this.procs[i]);
+    //         }
           // const stats = await pidusage(new_id);
           // console.log(stats);
           
@@ -276,20 +250,20 @@ class Runtime {
           //  pidusage(proc.id, function (err, stats) {
           //   console.log(stats)
           // })
-          return proc.id;
+    //       return proc.id;
           
-        } else throw new Error("Cannot spawn a directory");
-      } else throw new Error("Invalid argument type for MockRuntime..spawn");
-    }
+    //     } else throw new Error("Cannot spawn a directory");
+    //   } else throw new Error("Invalid argument type for MockRuntime..spawn");
+    // }
    
   
-    /* kills a process */
-    async kill(pid) {
-      let index = this.procs.findIndex((item) => item.id === pid);
-      if (index > -1) {
-        this.procs.splice(index, 1);
-      } else throw new Error("Process with ID = " + pid + " does not exist");
-    }
+    // /* kills a process */
+    // async kill(pid) {
+    //   let index = this.procs.findIndex((item) => item.id === pid);
+    //   if (index > -1) {
+    //     this.procs.splice(index, 1);
+    //   } else throw new Error("Process with ID = " + pid + " does not exist");
+    // }
   
     
 

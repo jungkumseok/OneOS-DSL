@@ -1,9 +1,11 @@
 const Spawner = require("./spawner.js");
 const path = require("path");
 const processString = require("./processString.js");
+const pidusage = require('pidusage')
 
 const structures = require("./structures.js");
 const e = require("express");
+const { css_beautify } = require("js-beautify");
 const Node = structures.Node;
 const Edge = structures.Edge;
 const Graph = structures.Graph;
@@ -116,16 +118,18 @@ function get_args(args_arr) {
 }
 
 function create_node(env, exp, spawn) {
-  if (spawn == true) {
-    var first_arg = exp.args[0];
-    verify_script_exists(env, cmd, first_arg);
+  // if (spawn == true) {
+  //   var first_arg = exp.args[0];
+  //   verify_script_exists(env, cmd, first_arg);
 
-    var file_name = first_arg.value;
-    var args = get_args(exp.args.slice(1));
-    var nd = new Node(file_name, args, exp.attrs);
-    env.nodeSpawnQueue.add(nd);
-    return;
-  }
+  //   var file_name = first_arg.value;
+  //   var args = get_args(exp.args.slice(1));
+  //   var nd = new Node(file_name, args, exp.attrs);
+  //   env.nodeSpawnQueue.add(nd);
+  //   return;
+  // }
+  // console.log(env);
+  // console.log(exp);
   if (
     exp.args.length != 4 ||
     !exp.args[2].value.startsWith("agent") ||
@@ -144,7 +148,19 @@ function create_node(env, exp, spawn) {
 
   var file_name = fourth_arg.value;
   var agent_name = exp.args[2].value.substr(6, exp.args[2].value.length - 7);
-  var nd = new Node(file_name, exp.args[0].value, agent_name);
+  let host_name = env.api.hosts[Math.floor(env.api.hosts.length * Math.random())];
+
+  var nd = new Node(file_name, exp.args[0].value, agent_name, host_name);
+//  function* foo() { 
+//   yield 1;
+//   yield 2;
+//   yield 3;
+// }
+
+// let f = foo();
+
+// console.log(f.next());
+
   if (
     env.nodeVarMap.has(exp.args[0].value) ||
     env.edgeVarMap.has(exp.args[0].value)

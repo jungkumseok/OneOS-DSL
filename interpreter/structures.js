@@ -4,7 +4,7 @@ const pidusage = require("pidUsage");
 
 
 //node represents processes
-function Node(script, name, agent_name) {
+function Node(script, name, agent_name, host_name) {
   this.name = name;
   // let arr = ["host-1", "host-2", "host-3"];
   // function selectRandom(arr){
@@ -18,6 +18,8 @@ function Node(script, name, agent_name) {
   this.out_edges = [];
   this.pid = null;
   this.tags = {};
+  this.host_name = host_name;
+  this.consumed_memory = 0;
   // const used = process.memoryUsage().heapUsed / 1024 / 1024;
   // this.memory = Math.round(used*100)/100; //showing heap memory used by a node.
 }// similar like spawn process
