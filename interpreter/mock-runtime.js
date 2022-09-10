@@ -352,13 +352,15 @@ class MockRuntime {
     } else throw new Error("Invalid argument type for MockRuntime..spawn");
   }
 
-  /* kills a process */
-  async kill(pid) {
-    let index = this.procs.findIndex((item) => item.id === pid);
-    if (index > -1) {
-      this.procs.splice(index, 1);
-    } else throw new Error("Process with ID = " + pid + " does not exist");
-  }
+ /* kills a process, equivalent to the kill command*/
+ async killProcess(absPath) {
+  if (typeof absPath === "number") {
+    let index = this.procs.findIndex((item) => item.id === absPath);
+      if (index > -1) {
+        this.procs.splice(index, 1);
+      } else throw new Error("Process with ID = " + absPath + " does not exist");
+  } else throw new Error("Invalid argument type for MockRuntime..killProcess");
+}
 
   /* Checks if a process exists */
   async processExists(pid) {

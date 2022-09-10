@@ -108,6 +108,10 @@ Interpreter.BUILTINS = {
     console.log(`ps ${args}`);
     return env.api.listProcesses();
   },
+  kill: (args, env) => {
+    console.log(`killed ${args[0]}`);
+    return env.api.killProcess(args[0]);
+  },
   ls_pipes: (args, env) => {
     console.log(`ls_pipes ${args}`);
     return env.api.listPipes();
