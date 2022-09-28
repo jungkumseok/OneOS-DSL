@@ -57,7 +57,6 @@ console.log(stack.size);
 //     });
 //     return info;
 // }
-<<<<<<< HEAD
 var nodes = [10,20,30,40,10,10,30,20];
 
 var duplicate = [];
@@ -138,9 +137,7 @@ list.listRuntime();
 // console.log(stack1, stack2);
 
 
-=======
 // let runtime = new MockRuntime();
->>>>>>> 4c111e6b7c2c8f242efae6ef215765018c7c093d
 // var hosts = [new Host("p1-0")];
 // let info = [];
 // info.push(runtime.hosts);
