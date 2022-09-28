@@ -5,9 +5,10 @@ var nodes = [10,20,30,40];
 
 
 class Stack{
-    constructor(){
+    constructor(id, size){
+        this.id = id;
         this.items = [];
-        this.size = 50;
+        this.size = size;
     }
     push(element){
         this.items.push(element);
@@ -21,22 +22,40 @@ class Stack{
     }
 }
 
-var stack = new Stack();
-const max = Math.max(...nodes);
-nodes.filter(number => number !== max);
-if(max<=stack.size){
-    stack.push(max);
-    stack.size=stack.size-max;
-}
-// stack.size = fluc;
-if(stack.size>0){
-    for(var i=0; i<nodes.length; i++){
-        if(nodes[i]<=stack.size){
-            stack.push(nodes[i]);
-            stack.size=stack.size-nodes[i];
-        }
-    }   
-}
+var stack1 = new Stack(1,50);
+var stack2 = new Stack(2,100);
+
+for(var i=0; i<nodes.length; i++){
+    if(stack1.size>nodes[i]){
+        stack1.push(nodes[i]);
+        stack1.size=stack1.size-nodes[i];
+    } else  if(stack2.size>nodes[i] ){
+        stack2.push(nodes[i]);
+        stack2.size=stack2.size-nodes[i];
+    }
+}   
+    
+
+// nodes.forEach(element => stack1.push(element));
+// nodes.forEach(element => stack2.push(element));
+
+console.log(stack1, stack2);
+
+// const max = Math.max(...nodes);
+// nodes.filter(number => number !== max);
+// if(max<=stack.size){
+//     stack.push(max);
+//     stack.size=stack.size-max;
+// }
+// // stack.size = fluc;
+// if(stack.size>0){
+//     for(var i=0; i<nodes.length; i++){
+//         if(nodes[i]<=stack.size){
+//             stack.push(nodes[i]);
+//             stack.size=stack.size-nodes[i];
+//         }
+//     }   
+// }
 // for(var i=0; i<nodes.length; i++){
 //    if(stack.size>=0){
         
@@ -47,8 +66,8 @@ if(stack.size>0){
     
 // } 
 // stack.push(1);
-console.log(stack.printStack());
-console.log(stack.size);
+// console.log(stack.printStack());
+// console.log(stack.size);
 // getAllRuntimes(){
 //     let info = {};
 //     info[this.config.id] = this.summary();
