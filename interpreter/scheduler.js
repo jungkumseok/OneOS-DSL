@@ -1,6 +1,54 @@
 const MockRuntime = require("./mock-runtime.js");
 const chalk = require("chalk");
 
+var nodes = [10,20,30,40];
+
+
+class Stack{
+    constructor(){
+        this.items = [];
+        this.size = 50;
+    }
+    push(element){
+        this.items.push(element);
+    }
+    printStack()
+    {
+        var str = "";
+        for (var i = 0; i < this.items.length; i++)
+            str += this.items[i] + " ";
+        return str;
+    }
+}
+
+var stack = new Stack();
+const max = Math.max(...nodes);
+nodes.filter(number => number !== max);
+if(max<=stack.size){
+    stack.push(max);
+    stack.size=stack.size-max;
+}
+// stack.size = fluc;
+if(stack.size>0){
+    for(var i=0; i<nodes.length; i++){
+        if(nodes[i]<=stack.size){
+            stack.push(nodes[i]);
+            stack.size=stack.size-nodes[i];
+        }
+    }   
+}
+// for(var i=0; i<nodes.length; i++){
+//    if(stack.size>=0){
+        
+//         stack.push(nodes[i]);
+//         stack.size = stack.size - nodes[i];
+//     }
+//     // nodes.forEach(element => stack.push(element));
+    
+// } 
+// stack.push(1);
+console.log(stack.printStack());
+console.log(stack.size);
 // getAllRuntimes(){
 //     let info = {};
 //     info[this.config.id] = this.summary();
@@ -9,6 +57,7 @@ const chalk = require("chalk");
 //     });
 //     return info;
 // }
+<<<<<<< HEAD
 var nodes = [10,20,30,40,10,10,30,20];
 
 var duplicate = [];
@@ -89,6 +138,9 @@ list.listRuntime();
 // console.log(stack1, stack2);
 
 
+=======
+// let runtime = new MockRuntime();
+>>>>>>> 4c111e6b7c2c8f242efae6ef215765018c7c093d
 // var hosts = [new Host("p1-0")];
 // let info = [];
 // info.push(runtime.hosts);
