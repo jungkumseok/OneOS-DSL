@@ -204,14 +204,14 @@ class Runtime {
     }
   
     /* returns a list of pipes (unix equivalent doesn't exist) */
-    // async listPipes() {
-    //   // return this.pipes;
-    //   var strArr = [];
-    //   for (var pipe of this.pipes) {
-    //     strArr.push(`${pipe.source.program.name} ~> ${pipe.sink.program.name}`);
-    //   }
-    //   return strArr;
-    // }
+    async listPipes() {
+      // return this.pipes;
+      var strArr = [];
+      for (var pipe of this.pipes) {
+        strArr.push(`${pipe.source.program.name} ~> ${pipe.sink.program.name}`);
+      }
+      return strArr;
+    }
   
     /* returns a list of hosts (unix equivalent doesn't exist) */
     // async listHosts() {

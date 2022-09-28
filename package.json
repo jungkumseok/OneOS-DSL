@@ -6,6 +6,8 @@
     "jest": "^26.6.3"
   },
   "dependencies": {
+    "chai": "^4.3.6",
+    "expect.js": "^0.3.1",
     "express": "^4.18.1",
     "js-beautify": "^1.14.4",
     "nodemon": "^2.0.19",
