@@ -1,14 +1,9 @@
 const Spawner = require("./spawner.js");
 const path = require("path");
 const processString = require("./processString.js");
-const pidusage = require('pidusage')
-
-const MockRuntime = require("./mock-runtime.js");
-const process = MockRuntime.Process;
 
 const structures = require("./structures.js");
 const e = require("express");
-const { css_beautify } = require("js-beautify");
 const Node = structures.Node;
 const Edge = structures.Edge;
 const Graph = structures.Graph;
@@ -120,14 +115,6 @@ function get_args(args_arr) {
   return args_arr.map((arg) => arg.value);
 }
 
-function* numberGen(){
-  let i =0; 
-  while(true){
-    yield i++;
-  }
-}
-const gen = numberGen();
-
 function create_node(env, exp, spawn) {
   if (spawn == true) {
     var first_arg = exp.args[0];
@@ -139,8 +126,6 @@ function create_node(env, exp, spawn) {
     env.nodeSpawnQueue.add(nd);
     return;
   }
-  console.log(env);
-  console.log(exp);
   if (
     exp.args.length != 4 ||
     !exp.args[2].value.startsWith("agent") ||
@@ -159,26 +144,13 @@ function create_node(env, exp, spawn) {
 
   var file_name = fourth_arg.value;
   var agent_name = exp.args[2].value.substr(6, exp.args[2].value.length - 7);
-  let host_name = env.api.hosts[Math.floor(env.api.hosts.length * Math.random())];
- 
- 
-  // pidusage(nd.pid, function (err, stats) {
-  //   console.log(stats);
-    // cb();
-  // })
-
+  var nd = new Node(file_name, exp.args[0].value, agent_name);
   if (
     env.nodeVarMap.has(exp.args[0].value) ||
     env.edgeVarMap.has(exp.args[0].value)
   ) {
     throw new Error(`Variable name \"${exp.args[0].value}\" already exists`);
-  } 
-  var nd = new Node(file_name, exp.args[0].value, agent_name, host_name);
-  nd.pid = gen.next().value;
-  // const stats = pidusage(nd.pid)
-  // console.log(stats);
-  console.log(nd.pid);
-
+  }
   env.nodeVarMap.set(exp.args[0].value, nd);
   return nd;
 }

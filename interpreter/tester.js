@@ -700,5 +700,4 @@ async function runTests() {
   await testGraphTags();
   console.log("All tests passed!");
 }
-
 runTests();

@@ -1,5 +1,4 @@
 const stream = require("stream");
-const pidusage = require("pidusage");
 
 const windows = process.platform === "win32";
 const SampleDirectory = {
@@ -103,9 +102,6 @@ class Host {
     this.id = id;
     this.procs = [];
     this.tags = {};
-    this.limit_memory = 512;
-
-
   }
 
   addProcess(proc) {
@@ -121,7 +117,7 @@ class Host {
     return {
       id: this.id,
       procs: this.procs.map((proc) => ({
-        // id: proc.id,
+        id: proc.id,
         host: this.id,
         program: proc.program,
         args: proc.args,
@@ -137,9 +133,7 @@ class Process {
     this.host = host;
     this.program = file;
     this.args = args || [];
-
     this.host.addProcess(this);
-    console.log(Process.getID.next());
   }
 
   setProgram(file) {
@@ -360,10 +354,6 @@ class MockRuntime {
         }
         let proc = new Process(host, item, args);
         this.procs.push(proc);
-
-        //  pidusage(proc.id, function (err, stats) {
-        //   console.log(stats)
-        // })
         return proc.id;
       } else throw new Error("Cannot spawn a directory");
     } else throw new Error("Invalid argument type for MockRuntime..spawn");

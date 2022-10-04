@@ -58,7 +58,7 @@ function Interpreter(runtime_api, builtins) {
   // Map of variable names to nodes
   this.environ.nodeVarMap = new Map();
 
-  // Map of variable names to edgesafevalu
+  // Map of variable names to edges
   this.environ.edgeVarMap = new Map();
 
   // Map of variable names to graphs
