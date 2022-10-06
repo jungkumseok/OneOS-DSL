@@ -97,5 +97,4 @@ function get_node_level_edges(edges) {
 
   return new_edges;
 }
-
 module.exports = Spawner;

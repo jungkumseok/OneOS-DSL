@@ -108,6 +108,10 @@ Interpreter.BUILTINS = {
     console.log(`ps ${args}`);
     return env.api.listProcesses();
   },
+  kill: (args, env) => {
+    console.log(`kill ${args[0]}`);
+    return env.api.killProcess(args[0]);
+  },
   ls_pipes: (args, env) => {
     console.log(`ls_pipes ${args}`);
     return env.api.listPipes();
@@ -129,7 +133,7 @@ Interpreter.prototype.eval = async function (str) {
   console.log("[Interpreter] trying to evaluate " + str);
   return this.evaluate(this.compile(str), this.environ);
 };
-
+//test the code manually 
 Interpreter.prototype.evalGraph = async function (input) {
   var lines = input.split("\n");
   for (var line of lines) {

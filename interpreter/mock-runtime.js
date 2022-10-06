@@ -1,7 +1,6 @@
 const stream = require("stream");
 
 const windows = process.platform === "win32";
-
 const SampleDirectory = {
   bin: {
     apt: "Package Manager",
@@ -134,7 +133,6 @@ class Process {
     this.host = host;
     this.program = file;
     this.args = args || [];
-
     this.host.addProcess(this);
   }
 
@@ -284,6 +282,16 @@ class MockRuntime {
       else return [{ name: item.name, type: "file" }];
     } else throw new Error("Invalid argument type for MockRuntime..listFiles");
   }
+     /* kills a process, equivalent to the kill command*/
+  async killProcess(absPath) {
+    if (typeof absPath === "number") {
+      let index = this.procs.findIndex((item) => item.id === absPath);
+      if (index > -1) {
+        this.procs.splice(index, 1);
+      } else throw new Error("Process with ID = " + absPath + " does not exist");
+    } else throw new Error("Invalid argument type for MockRuntime..killProcess");
+  }
+
 
   /* equivalent to the unix `ps` command */
   async listProcesses() {
@@ -328,7 +336,7 @@ class MockRuntime {
   }
 
   /* starts a new process */
-  // TODO: only spawn on devices that have all the matching tags
+  //TODO: only spawn on devices that have all the matching tags
   async spawn(agentAbsPath, args, hostnames) {
     if (typeof agentAbsPath === "string") {
       let tokens = windows ? agentAbsPath.split("\\") : agentAbsPath.split("/");
@@ -346,19 +354,11 @@ class MockRuntime {
         }
         let proc = new Process(host, item, args);
         this.procs.push(proc);
-
         return proc.id;
       } else throw new Error("Cannot spawn a directory");
     } else throw new Error("Invalid argument type for MockRuntime..spawn");
   }
 
-  /* kills a process */
-  async kill(pid) {
-    let index = this.procs.findIndex((item) => item.id === pid);
-    if (index > -1) {
-      this.procs.splice(index, 1);
-    } else throw new Error("Process with ID = " + pid + " does not exist");
-  }
 
   /* Checks if a process exists */
   async processExists(pid) {

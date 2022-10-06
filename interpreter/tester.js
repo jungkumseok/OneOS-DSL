@@ -194,6 +194,8 @@ async function testGraphDeclaration() {
   //check incoming and outgoing edges
   assert.equal(interpreter.environ.nodeVarMap.get("A").in_edges.length, 0);
   assert.equal(interpreter.environ.nodeVarMap.get("A").out_edges.length, 1);
+  assert.equal(interpreter.environ.nodeVarMap.get("B").in_edges.length, 1);
+  assert.equal(interpreter.environ.nodeVarMap.get("B").out_edges.length, 0);
 }
 
 //check graph with nonexistent node
@@ -698,5 +700,4 @@ async function runTests() {
   await testGraphTags();
   console.log("All tests passed!");
 }
-
 runTests();
