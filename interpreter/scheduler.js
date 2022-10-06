@@ -33,8 +33,8 @@ class Scheduler{
     constructor(){
        this.runtimes=[
             new Runtime(1,50),
-            new Runtime(2,100),
-            new Runtime(3,100),
+            new Runtime(2,50),
+
             
         ];
         this.procs=[
@@ -48,10 +48,14 @@ class Scheduler{
         console.log(this.runtimes);
     }
     async assignToPrivate(){
-        var nodes = [20,10,30,40];
+        var nodes = [10,20,30,40];
         var j =0, i=0;
-        nodes.sort();
+        nodes.sort((a,b) => a-b);
         while(i<nodes.length){
+            if(j==this.runtimes.length-1 && nodes[i]>this.runtimes[j].privateQueue.space){
+                console.log("No Space left now", this.runtimes);
+                break;
+            }
             if(j<this.runtimes.length && this.runtimes[j].privateQueue.space>=nodes[i]){
                 this.runtimes[j].privateQueue.push(nodes[i]);
                 this.runtimes[j].privateQueue.space = this.runtimes[j].privateQueue.space-nodes[i];
@@ -59,10 +63,7 @@ class Scheduler{
             } else {
                 j++;
             }
-            if(j==this.runtimes.length-1 && nodes[i]>this.runtimes[j].privateQueue.space){
-                console.log("No Space left now", this.runtimes);
-                break;
-            }
+           
         }
         // console.log(this.runtimes);
         // var j =0, i=0;
